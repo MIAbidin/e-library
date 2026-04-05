@@ -1,0 +1,3 @@
+Supabase
+- name = e-library
+- db password = qr5wCWx76qPdAMKe

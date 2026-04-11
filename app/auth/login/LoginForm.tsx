@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function LoginForm() {
   const router = useRouter()
@@ -29,11 +30,10 @@ export default function LoginForm() {
           router.push('/auth/inactive')
           return
         }
-        setError('Email atau password salah. Silakan coba lagi.')
+        setError('Email atau password tidak valid. Silakan coba lagi.')
         return
       }
 
-      // Redirect berdasarkan role — ambil session terbaru
       const res = await fetch('/api/auth/session')
       const session = await res.json()
 
@@ -50,82 +50,212 @@ export default function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {/* Error Message */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 flex items-center gap-2">
-          <span>⚠️</span>
-          <span>{error}</span>
-        </div>
-      )}
+    <>
+      <style>{`
+        .form-group {
+          margin-bottom: 1.25rem;
+        }
 
-      {/* Email */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">
-          Email Perusahaan
-        </label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="nama@perusahaan.com"
-          required
-          disabled={loading}
-          className="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm
-            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-            disabled:bg-gray-50 disabled:text-gray-400 transition"
-        />
-      </div>
+        .form-label {
+          display: block;
+          font-size: 0.8125rem;
+          font-weight: 500;
+          color: rgba(255,255,255,0.5);
+          margin-bottom: 0.5rem;
+          letter-spacing: 0.02em;
+          text-transform: uppercase;
+        }
 
-      {/* Password */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">
-          Password
-        </label>
-        <div className="relative">
+        .form-input {
+          width: 100%;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 10px;
+          padding: 13px 16px;
+          color: white;
+          font-size: 0.9375rem;
+          font-family: 'DM Sans', sans-serif;
+          transition: border-color 0.2s, background 0.2s;
+          outline: none;
+          box-sizing: border-box;
+        }
+
+        .form-input::placeholder {
+          color: rgba(255,255,255,0.2);
+        }
+
+        .form-input:focus {
+          border-color: rgba(59,130,246,0.6);
+          background: rgba(255,255,255,0.07);
+        }
+
+        .form-input-wrap {
+          position: relative;
+        }
+
+        .eye-btn {
+          position: absolute;
+          right: 14px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: none;
+          border: none;
+          color: rgba(255,255,255,0.3);
+          cursor: pointer;
+          padding: 0;
+          font-size: 1rem;
+          transition: color 0.2s;
+          display: flex; align-items: center; justify-content: center;
+          width: 28px; height: 28px;
+        }
+
+        .eye-btn:hover { color: rgba(255,255,255,0.6); }
+
+        .submit-btn {
+          width: 100%;
+          background: #3b82f6;
+          color: white;
+          border: none;
+          border-radius: 10px;
+          padding: 14px;
+          font-size: 0.9375rem;
+          font-weight: 600;
+          font-family: 'DM Sans', sans-serif;
+          cursor: pointer;
+          transition: background 0.2s, transform 0.1s;
+          display: flex; align-items: center; justify-content: center; gap: 8px;
+          margin-top: 0.5rem;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+          background: #2563eb;
+          transform: translateY(-1px);
+        }
+
+        .submit-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .error-box {
+          background: rgba(239,68,68,0.1);
+          border: 1px solid rgba(239,68,68,0.25);
+          border-radius: 10px;
+          padding: 12px 16px;
+          font-size: 0.875rem;
+          color: #fca5a5;
+          margin-bottom: 1.25rem;
+          display: flex; align-items: flex-start; gap: 8px;
+        }
+
+        .spinner {
+          width: 16px; height: 16px;
+          border: 2px solid rgba(255,255,255,0.3);
+          border-top-color: white;
+          border-radius: 50%;
+          animation: spin 0.7s linear infinite;
+          flex-shrink: 0;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .divider {
+          display: flex; align-items: center; gap: 12px;
+          margin: 1.5rem 0;
+        }
+
+        .divider-line {
+          flex: 1;
+          height: 1px;
+          background: rgba(255,255,255,0.08);
+        }
+
+        .divider-text {
+          font-size: 0.75rem;
+          color: rgba(255,255,255,0.25);
+        }
+
+        .forgot-link {
+          display: block;
+          text-align: right;
+          font-size: 0.8125rem;
+          color: rgba(255,255,255,0.35);
+          text-decoration: none;
+          margin-top: 8px;
+          transition: color 0.2s;
+        }
+        .forgot-link:hover { color: rgba(255,255,255,0.65); }
+      `}</style>
+
+      <form onSubmit={handleSubmit}>
+        {error && (
+          <div className="error-box">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
+              <circle cx="8" cy="8" r="7" stroke="#f87171" strokeWidth="1.5" />
+              <path d="M8 5v3.5M8 10.5v.5" stroke="#f87171" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            {error}
+          </div>
+        )}
+
+        <div className="form-group">
+          <label className="form-label">Email</label>
           <input
-            type={showPassword ? 'text' : 'password'}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Masukkan password"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="nama@perusahaan.com"
             required
             disabled={loading}
-            className="w-full px-4 py-2.5 pr-11 rounded-lg border border-gray-300 text-sm
-              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-              disabled:bg-gray-50 disabled:text-gray-400 transition"
+            className="form-input"
+            autoComplete="email"
           />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg"
-          >
-            {showPassword ? '🙈' : '👁️'}
-          </button>
         </div>
-      </div>
 
-      {/* Submit */}
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400
-          text-white font-medium py-2.5 rounded-lg text-sm transition
-          flex items-center justify-center gap-2"
-      >
-        {loading ? (
-          <>
-            <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            Masuk...
-          </>
-        ) : (
-          'Masuk'
-        )}
-      </button>
+        <div className="form-group">
+          <label className="form-label">Password</label>
+          <div className="form-input-wrap">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Masukkan password"
+              required
+              disabled={loading}
+              className="form-input"
+              style={{ paddingRight: 48 }}
+              autoComplete="current-password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="eye-btn"
+            >
+              {showPassword ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22" />
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
 
-      {/* Info */}
-      <p className="text-xs text-gray-400 text-center pt-1">
-        Belum punya akun? Hubungi Administrator IT Anda.
-      </p>
-    </form>
+        <button type="submit" disabled={loading} className="submit-btn">
+          {loading ? (
+            <>
+              <div className="spinner" />
+              Masuk...
+            </>
+          ) : (
+            'Masuk'
+          )}
+        </button>
+      </form>
+    </>
   )
 }

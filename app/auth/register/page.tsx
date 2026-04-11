@@ -13,8 +13,6 @@ export default async function RegisterPage() {
   return (
     <div className="auth-root">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@400;500;600&display=swap');
-
         .auth-root {
           min-height: 100vh;
           display: flex;

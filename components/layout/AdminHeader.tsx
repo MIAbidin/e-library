@@ -3,6 +3,7 @@
 import { signOut } from 'next-auth/react'
 import { usePathname } from 'next/navigation'
 import { useSidebar } from '@/hooks/useSidebar'
+import { ThemeToggleButton } from '@/components/providers/ThemeProvider'
 
 const pageTitles: Record<string, string> = {
   '/admin': 'Dashboard Admin',
@@ -23,40 +24,69 @@ export function AdminHeader() {
   )?.[1] ?? 'Admin Panel'
 
   return (
-    <header className="h-14 lg:h-16 bg-white border-b border-gray-200 flex items-center
-      justify-between px-4 lg:px-6 flex-shrink-0">
+    <header
+      className="h-14 lg:h-16 flex items-center justify-between px-4 lg:px-6 flex-shrink-0 sticky top-0 z-40"
+      style={{
+        background: 'var(--nav-bg)',
+        borderBottom: '1px solid var(--nav-border)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+      }}
+    >
       <div className="flex items-center gap-3">
-        {/* Hamburger — mobile only */}
+        {/* Hamburger — mobile */}
         <button
           onClick={toggle}
-          className="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg
-            text-gray-500 hover:bg-gray-100 transition"
+          className="lg:hidden w-9 h-9 flex items-center justify-center rounded-xl transition-all"
+          style={{ background: 'var(--btn-ghost-bg)', border: '1px solid var(--border-base)' }}
           aria-label="Buka menu"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M4 6h16M4 12h16M4 18h16" />
+          <svg className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs bg-red-100 text-red-600 font-semibold px-2 py-0.5
-            rounded-full uppercase tracking-wide hidden sm:inline">
+        <div className="flex items-center gap-2.5">
+          <span
+            className="text-xs font-bold px-2 py-0.5 rounded-full hidden sm:inline-block"
+            style={{
+              background: 'rgba(239,68,68,0.12)',
+              color: '#f87171',
+              border: '1px solid rgba(239,68,68,0.2)',
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              fontSize: '0.6875rem',
+            }}
+          >
             Admin
           </span>
-          <h2 className="text-sm lg:text-base font-semibold text-gray-800">{title}</h2>
+          <h2
+            className="text-sm lg:text-base font-semibold"
+            style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}
+          >
+            {title}
+          </h2>
         </div>
       </div>
 
-      <button
-        onClick={() => signOut({ callbackUrl: '/auth/login' })}
-        className="flex items-center gap-1.5 text-sm text-red-600 hover:text-red-700
-          font-medium px-3 py-1.5 rounded-lg hover:bg-red-50 transition"
-      >
-        <span className="hidden sm:inline">🚪</span>
-        <span className="hidden sm:inline">Keluar</span>
-        <span className="sm:hidden">🚪</span>
-      </button>
+      <div className="flex items-center gap-2">
+        <ThemeToggleButton />
+        <button
+          onClick={() => signOut({ callbackUrl: '/auth/login' })}
+          className="flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-xl transition-all"
+          style={{
+            background: 'rgba(239,68,68,0.08)',
+            color: '#f87171',
+            border: '1px solid rgba(239,68,68,0.15)',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.14)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.08)')}
+        >
+          <span className="hidden sm:inline">🚪</span>
+          <span className="hidden sm:inline">Keluar</span>
+          <span className="sm:hidden">🚪</span>
+        </button>
+      </div>
     </header>
   )
 }

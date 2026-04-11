@@ -4,8 +4,6 @@ export default function InactivePage() {
   return (
     <div className="root">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@400;500;600&display=swap');
-
         .root {
           min-height: 100vh;
           display: flex; align-items: center; justify-content: center;

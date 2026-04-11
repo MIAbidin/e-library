@@ -1,3 +1,4 @@
+// app/dashboard/books/[id]/page.tsx
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/options'
 import { createAdminClient } from '@/lib/supabase/server'
@@ -7,27 +8,36 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/Badge'
 import { formatDate } from '@/lib/utils'
 import { ReadBookButton } from './ReadBookButton'
+import { checkBookAccess } from '@/lib/book-access'
 
-interface PageProps {
-  params: { id: string }
-}
 export default async function BookDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ access?: string }>
 }) {
   const { id } = await params
+  const { access: accessQuery } = await searchParams
 
   const session = await getServerSession(authOptions)
   const supabase = createAdminClient()
 
   const { data: book, error } = await supabase
     .from('books')
-    .select('*, category:categories(id, name)')
+    .select('*, category:categories(id, name), access_type')
     .eq('id', id)
     .single()
 
   if (error || !book) notFound()
+
+  // ✅ Cek apakah user boleh membaca buku ini
+  const access = await checkBookAccess(
+    book.id,
+    session!.user.id,
+    session!.user.role,
+    session!.user.department
+  )
 
   const { data: history } = await supabase
     .from('read_history')
@@ -40,6 +50,8 @@ export default async function BookDetailPage({
   const progress = book.total_pages > 0
     ? Math.round((lastPage / book.total_pages) * 100)
     : 0
+
+  const accessDenied = !access.canRead || accessQuery === 'denied'
 
   return (
     <div className="max-w-4xl">
@@ -70,6 +82,21 @@ export default async function BookDetailPage({
                   <span className="text-7xl">📗</span>
                 </div>
               )}
+
+              {/* Access badge */}
+              <div className="absolute top-3 left-3">
+                {book.access_type === 'restricted' ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold
+                    bg-amber-100 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-full">
+                    🔒 Akses Terbatas
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold
+                    bg-green-100 text-green-700 border border-green-200 px-2.5 py-1 rounded-full">
+                    🌐 Publik
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -112,8 +139,8 @@ export default async function BookDetailPage({
               )}
             </div>
 
-            {/* Progress bar */}
-            {progress > 0 && (
+            {/* Progress bar — hanya tampil jika punya akses */}
+            {access.canRead && progress > 0 && (
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-xs text-gray-500">Progress membaca</span>
@@ -140,12 +167,27 @@ export default async function BookDetailPage({
               </div>
             )}
 
-            {/* CTA */}
-            <ReadBookButton
-              bookId={book.id}
-              lastPage={lastPage}
-              progress={progress}
-            />
+            {/* ✅ CTA berdasarkan status akses */}
+            {accessDenied ? (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">🚫</span>
+                  <div>
+                    <p className="text-sm font-semibold text-red-800">Akses Ditolak</p>
+                    <p className="text-sm text-red-700 mt-0.5">
+                      Buku ini hanya dapat diakses oleh pengguna atau departemen tertentu.
+                      Hubungi Administrator jika Anda merasa seharusnya memiliki akses.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <ReadBookButton
+                bookId={book.id}
+                lastPage={lastPage}
+                progress={progress}
+              />
+            )}
           </div>
         </div>
       </div>

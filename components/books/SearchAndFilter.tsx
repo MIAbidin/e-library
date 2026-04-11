@@ -6,9 +6,12 @@ import { Category } from '@/types'
 
 interface SearchAndFilterProps {
   categories: Category[]
+  /** Override base path dan params ekstra (e.g. view=catalog) */
+  basePath?: string
+  extraParams?: Record<string, string>
 }
 
-export function SearchAndFilter({ categories }: SearchAndFilterProps) {
+export function SearchAndFilter({ categories, basePath, extraParams }: SearchAndFilterProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -17,6 +20,8 @@ export function SearchAndFilter({ categories }: SearchAndFilterProps) {
   const [sort, setSort] = useState(searchParams.get('sort') ?? 'newest')
   const [showFilters, setShowFilters] = useState(false)
 
+  const resolvedBase = basePath ?? '/dashboard'
+
   const updateParams = useCallback(
     (s: string, c: string, so: string) => {
       const params = new URLSearchParams()
@@ -24,9 +29,13 @@ export function SearchAndFilter({ categories }: SearchAndFilterProps) {
       if (c) params.set('category', c)
       if (so !== 'newest') params.set('sort', so)
       params.set('page', '1')
-      router.push(`/dashboard?${params.toString()}`)
+      // Tambahkan extra params (e.g. view=catalog)
+      if (extraParams) {
+        Object.entries(extraParams).forEach(([k, v]) => params.set(k, v))
+      }
+      router.push(`${resolvedBase}?${params.toString()}`)
     },
-    [router]
+    [router, resolvedBase, extraParams]
   )
 
   useEffect(() => {
@@ -48,7 +57,11 @@ export function SearchAndFilter({ categories }: SearchAndFilterProps) {
     setSearch('')
     setCategory('')
     setSort('newest')
-    router.push('/dashboard')
+    const params = new URLSearchParams()
+    if (extraParams) {
+      Object.entries(extraParams).forEach(([k, v]) => params.set(k, v))
+    }
+    router.push(`${resolvedBase}?${params.toString()}`)
   }
 
   const hasActiveFilter = search || category || sort !== 'newest'
@@ -56,7 +69,6 @@ export function SearchAndFilter({ categories }: SearchAndFilterProps) {
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-3 lg:p-4 mb-4 lg:mb-6">
-      {/* Row 1 — Search + Filter toggle (mobile) */}
       <div className="flex gap-2">
         {/* Search */}
         <div className="relative flex-1">
@@ -79,7 +91,7 @@ export function SearchAndFilter({ categories }: SearchAndFilterProps) {
           )}
         </div>
 
-        {/* Filter toggle button — mobile */}
+        {/* Filter toggle — mobile */}
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={`lg:hidden flex items-center gap-1.5 px-3 py-2.5 text-sm border rounded-lg
@@ -100,7 +112,7 @@ export function SearchAndFilter({ categories }: SearchAndFilterProps) {
           )}
         </button>
 
-        {/* Desktop filters — always visible */}
+        {/* Desktop filters */}
         <div className="hidden lg:flex gap-2">
           <select
             value={category}
@@ -136,7 +148,7 @@ export function SearchAndFilter({ categories }: SearchAndFilterProps) {
         </div>
       </div>
 
-      {/* Row 2 — Mobile expanded filters */}
+      {/* Mobile expanded filters */}
       {showFilters && (
         <div className="lg:hidden mt-3 pt-3 border-t border-gray-100 flex flex-col gap-2">
           <select

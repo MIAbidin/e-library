@@ -1,8 +1,10 @@
+// app/dashboard/books/[id]/read/page.tsx
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/options'
 import { createAdminClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import { PDFViewerWrapper } from '@/components/PDFViewerWrapper'
+import { checkBookAccess } from '@/lib/book-access'
 
 interface PageProps {
   params: { id: string } | Promise<{ id: string }>
@@ -20,11 +22,23 @@ export default async function ReadBookPage({ params, searchParams }: PageProps) 
 
   const { data: book, error } = await supabase
     .from('books')
-    .select('id, title, file_url, total_pages')
+    .select('id, title, file_url, total_pages, access_type')
     .eq('id', id)
     .single()
 
   if (error || !book) notFound()
+
+  // ✅ Cek apakah user boleh membaca buku ini
+  const access = await checkBookAccess(
+    book.id,
+    session.user.id,
+    session.user.role,
+    session.user.department
+  )
+
+  if (!access.canRead) {
+    redirect(`/dashboard/books/${id}?access=denied`)
+  }
 
   if (!book.file_url) {
     return (

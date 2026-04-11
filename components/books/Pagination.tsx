@@ -17,10 +17,15 @@ export function Pagination({ currentPage, totalPages }: PaginationProps) {
   const goToPage = (page: number) => {
     const params = new URLSearchParams(searchParams.toString())
     params.set('page', page.toString())
-    router.push(`/dashboard?${params.toString()}`)
+    // Preserve view param jika ada (untuk dashboard catalog mode)
+    const view = searchParams.get('view')
+    if (view) params.set('view', view)
+
+    // Tentukan base path dari URL saat ini
+    const basePath = window.location.pathname
+    router.push(`${basePath}?${params.toString()}`)
   }
 
-  // Buat array halaman yang ditampilkan
   const pages: (number | 'ellipsis')[] = []
   if (totalPages <= 7) {
     for (let i = 1; i <= totalPages; i++) pages.push(i)
@@ -36,7 +41,6 @@ export function Pagination({ currentPage, totalPages }: PaginationProps) {
 
   return (
     <div className="flex items-center justify-center gap-1.5 mt-8">
-      {/* Prev */}
       <button
         onClick={() => goToPage(currentPage - 1)}
         disabled={currentPage === 1}
@@ -46,7 +50,6 @@ export function Pagination({ currentPage, totalPages }: PaginationProps) {
         ← Prev
       </button>
 
-      {/* Pages */}
       {pages.map((page, i) =>
         page === 'ellipsis' ? (
           <span key={`e-${i}`} className="px-2 text-gray-400">…</span>
@@ -66,7 +69,6 @@ export function Pagination({ currentPage, totalPages }: PaginationProps) {
         )
       )}
 
-      {/* Next */}
       <button
         onClick={() => goToPage(currentPage + 1)}
         disabled={currentPage === totalPages}

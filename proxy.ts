@@ -28,6 +28,7 @@ export default withAuth(
 
         // Route publik — tidak butuh login
         const publicRoutes = [
+          '/home',       // ← home page bisa diakses siapa saja
           '/books',
           '/auth/login',
           '/auth/register',
@@ -36,7 +37,6 @@ export default withAuth(
           '/auth/inactive',
         ]
 
-        // Cek apakah path dimulai dengan route publik
         const isPublic = publicRoutes.some(
           (route) => pathname === route || pathname.startsWith(route + '/')
         )
@@ -55,6 +55,7 @@ export default withAuth(
 
 export const config = {
   matcher: [
+    '/home',
     '/admin/:path*',
     '/dashboard/:path*',
     '/notifications/:path*',

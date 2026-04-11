@@ -11,20 +11,29 @@ import { BookForm } from '@/components/books/BookForm'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { toast } from '@/components/ui/Toast'
 import { formatDate, truncate } from '@/lib/utils'
+import { BookAccessManager } from '@/components/books/BookAccessManager'
+
+// Extend Book type locally
+interface BookWithAccess extends Book {
+  access_type?: 'public' | 'restricted'
+}
 
 export default function AdminBooksPage() {
-  const [books, setBooks] = useState<Book[]>([])
+  const [books, setBooks]           = useState<BookWithAccess[]>([])
   const [categories, setCategories] = useState<Category[]>([])
-  const [total, setTotal] = useState(0)
+  const [total, setTotal]           = useState(0)
   const [totalPages, setTotalPages] = useState(1)
-  const [page, setPage] = useState(1)
-  const [search, setSearch] = useState('')
-  const [loading, setLoading] = useState(true)
+  const [page, setPage]             = useState(1)
+  const [search, setSearch]         = useState('')
+  const [loading, setLoading]       = useState(true)
 
-  const [showForm, setShowForm] = useState(false)
-  const [editBook, setEditBook] = useState<Book | null>(null)
-  const [deleteBook, setDeleteBook] = useState<Book | null>(null)
-  const [deleting, setDeleting] = useState(false)
+  const [showForm, setShowForm]     = useState(false)
+  const [editBook, setEditBook]     = useState<BookWithAccess | null>(null)
+  const [deleteBook, setDeleteBook] = useState<BookWithAccess | null>(null)
+  const [deleting, setDeleting]     = useState(false)
+
+  // Access manager modal
+  const [accessBook, setAccessBook] = useState<BookWithAccess | null>(null)
 
   const fetchBooks = useCallback(async () => {
     setLoading(true)
@@ -57,14 +66,11 @@ export default function AdminBooksPage() {
 
   // Debounce search
   useEffect(() => {
-    const t = setTimeout(() => {
-      setPage(1)
-      fetchBooks()
-    }, 400)
+    const t = setTimeout(() => { setPage(1); fetchBooks() }, 400)
     return () => clearTimeout(t)
   }, [search]) // eslint-disable-line
 
-  const handleFormSuccess = (_book: Book) => {
+  const handleFormSuccess = (_book: BookWithAccess) => {
     setShowForm(false)
     setEditBook(null)
     fetchBooks()
@@ -119,7 +125,7 @@ export default function AdminBooksPage() {
         </div>
       </div>
 
-      {/* Table + Card Container */}
+      {/* Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         {loading ? (
           <div className="flex justify-center py-16">
@@ -134,24 +140,27 @@ export default function AdminBooksPage() {
           </div>
         ) : (
           <>
-            {/* ========== DESKTOP TABLE — md ke atas ========== */}
+            {/* Desktop table */}
             <div className="hidden md:block">
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       Buku
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       Kategori
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Akses
+                    </th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                       Halaman
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                       Ditambahkan
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       Aksi
                     </th>
                   </tr>
@@ -159,54 +168,84 @@ export default function AdminBooksPage() {
                 <tbody className="divide-y divide-gray-100">
                   {books.map((book) => (
                     <tr key={book.id} className="hover:bg-gray-50 transition">
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-14 rounded overflow-hidden bg-gradient-to-br from-blue-100 to-indigo-100 flex-shrink-0">
                             {book.cover_url ? (
-                              <Image
-                                src={book.cover_url}
-                                alt={book.title}
-                                width={40}
-                                height={56}
-                                className="object-cover w-full h-full"
-                              />
+                              <Image src={book.cover_url} alt={book.title} width={40} height={56}
+                                className="object-cover w-full h-full" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-lg">📗</div>
                             )}
                           </div>
                           <div>
                             <p className="text-sm font-medium text-gray-900">
-                              {truncate(book.title, 45)}
+                              {truncate(book.title, 40)}
                             </p>
                             <p className="text-xs text-gray-400">{book.author}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-4">
                         {book.category ? (
                           <Badge variant="blue">{book.category.name}</Badge>
                         ) : (
                           <span className="text-gray-300 text-xs">—</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">
+
+                      {/* Access badge */}
+                      <td className="px-5 py-4">
+                        <button
+                          onClick={() => setAccessBook(book)}
+                          className="group flex items-center gap-1.5"
+                          title="Kelola akses"
+                        >
+                          {book.access_type === 'restricted' ? (
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold
+                              bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full
+                              group-hover:bg-amber-200 transition">
+                              🔒 Terbatas
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold
+                              bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full
+                              group-hover:bg-green-200 transition">
+                              🌐 Publik
+                            </span>
+                          )}
+                          <span className="text-xs text-gray-300 group-hover:text-blue-400 transition">
+                            ✏️
+                          </span>
+                        </button>
+                      </td>
+
+                      <td className="px-5 py-4 text-sm text-gray-500 hidden lg:table-cell">
                         {book.total_pages > 0 ? `${book.total_pages} hal` : '—'}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">
+                      <td className="px-5 py-4 text-sm text-gray-500 hidden lg:table-cell">
                         {formatDate(book.created_at)}
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 justify-end">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-1.5 justify-end">
+                          <button
+                            onClick={() => setAccessBook(book)}
+                            className="px-2.5 py-1.5 text-xs text-purple-600 border border-purple-200
+                              rounded-lg hover:bg-purple-50 transition font-medium"
+                            title="Kelola akses buku"
+                          >
+                            🔑 Akses
+                          </button>
                           <button
                             onClick={() => { setEditBook(book); setShowForm(true) }}
-                            className="px-3 py-1.5 text-xs text-blue-600 border border-blue-200
+                            className="px-2.5 py-1.5 text-xs text-blue-600 border border-blue-200
                               rounded-lg hover:bg-blue-50 transition font-medium"
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => setDeleteBook(book)}
-                            className="px-3 py-1.5 text-xs text-red-600 border border-red-200
+                            className="px-2.5 py-1.5 text-xs text-red-600 border border-red-200
                               rounded-lg hover:bg-red-50 transition font-medium"
                           >
                             Hapus
@@ -219,63 +258,57 @@ export default function AdminBooksPage() {
               </table>
             </div>
 
-            {/* ========== MOBILE CARD LIST — di bawah md ========== */}
+            {/* Mobile cards */}
             <div className="md:hidden divide-y divide-gray-100">
               {books.map((book) => (
-                <div key={book.id} className="p-4 hover:bg-gray-50 transition">
+                <div key={book.id} className="p-4">
                   <div className="flex gap-3">
-                    {/* Cover */}
                     <div className="w-12 h-16 rounded overflow-hidden bg-gradient-to-br
                       from-blue-100 to-indigo-100 flex-shrink-0">
                       {book.cover_url ? (
-                        <Image
-                          src={book.cover_url}
-                          alt={book.title}
-                          width={48}
-                          height={64}
-                          className="object-cover w-full h-full"
-                        />
+                        <Image src={book.cover_url} alt={book.title} width={48} height={64}
+                          className="object-cover w-full h-full" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xl">
-                          📗
-                        </div>
+                        <div className="w-full h-full flex items-center justify-center text-xl">📗</div>
                       )}
                     </div>
-
-                    {/* Info */}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">
                         {book.title}
                       </p>
                       <p className="text-xs text-gray-400 mt-0.5">{book.author}</p>
                       <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                        {book.category && (
-                          <Badge variant="blue">{book.category.name}</Badge>
-                        )}
-                        {book.total_pages > 0 && (
-                          <span className="text-xs text-gray-400">
-                            {book.total_pages} hal
+                        {book.category && <Badge variant="blue">{book.category.name}</Badge>}
+                        {book.access_type === 'restricted' ? (
+                          <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold">
+                            🔒 Terbatas
+                          </span>
+                        ) : (
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">
+                            🌐 Publik
                           </span>
                         )}
-                        <span className="text-xs text-gray-300">
-                          {formatDate(book.created_at, { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </span>
                       </div>
                     </div>
                   </div>
-
-                  {/* Action buttons — full width di mobile */}
-                  <div className="flex gap-2 mt-3">
+                  <div className="grid grid-cols-3 gap-2 mt-3">
+                    <button
+                      onClick={() => setAccessBook(book)}
+                      className="py-2 text-xs text-purple-600 border border-purple-200
+                        rounded-lg hover:bg-purple-50 transition font-medium"
+                    >
+                      🔑 Akses
+                    </button>
                     <button
                       onClick={() => { setEditBook(book); setShowForm(true) }}
-                      className="flex-1 py-2 text-xs text-blue-600 border border-blue-200
+                      className="py-2 text-xs text-blue-600 border border-blue-200
                         rounded-lg hover:bg-blue-50 transition font-medium"
                     >
                       ✏️ Edit
                     </button>
                     <button
                       onClick={() => setDeleteBook(book)}
-                      className="flex-1 py-2 text-xs text-red-600 border border-red-200
+                      className="py-2 text-xs text-red-600 border border-red-200
                         rounded-lg hover:bg-red-50 transition font-medium"
                     >
                       🗑️ Hapus
@@ -290,27 +323,16 @@ export default function AdminBooksPage() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="px-4 lg:px-6 py-4 border-t border-gray-100 flex items-center justify-between">
-            <p className="text-sm text-gray-500">
-              <span className="hidden sm:inline">Halaman </span>
-              {page}
-              <span className="hidden sm:inline"> dari {totalPages}</span>
-              <span className="sm:hidden">/{totalPages}</span>
-            </p>
+            <p className="text-sm text-gray-500">{page}/{totalPages}</p>
             <div className="flex gap-2">
-              <button
-                onClick={() => setPage((p) => p - 1)}
-                disabled={page === 1}
+              <button onClick={() => setPage(p => p - 1)} disabled={page === 1}
                 className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg
-                  hover:bg-gray-50 disabled:opacity-40 transition"
-              >
+                  hover:bg-gray-50 disabled:opacity-40 transition">
                 ← Prev
               </button>
-              <button
-                onClick={() => setPage((p) => p + 1)}
-                disabled={page === totalPages}
+              <button onClick={() => setPage(p => p + 1)} disabled={page === totalPages}
                 className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg
-                  hover:bg-gray-50 disabled:opacity-40 transition"
-              >
+                  hover:bg-gray-50 disabled:opacity-40 transition">
                 Next →
               </button>
             </div>
@@ -318,19 +340,32 @@ export default function AdminBooksPage() {
         )}
       </div>
 
-      {/* Modal Form */}
-      <Modal
-        isOpen={showForm}
-        onClose={() => { setShowForm(false); setEditBook(null) }}
-        title={editBook ? 'Edit Buku' : 'Upload Buku Baru'}
-        size="lg"
-      >
+      {/* Modal: Upload / Edit */}
+      <Modal isOpen={showForm} onClose={() => { setShowForm(false); setEditBook(null) }}
+        title={editBook ? 'Edit Buku' : 'Upload Buku Baru'} size="lg">
         <BookForm
           categories={categories}
           initialData={editBook ?? undefined}
           onSuccess={handleFormSuccess}
           onCancel={() => { setShowForm(false); setEditBook(null) }}
         />
+      </Modal>
+
+      {/* Modal: Kontrol Akses */}
+      <Modal
+        isOpen={!!accessBook}
+        onClose={() => setAccessBook(null)}
+        title="Kontrol Akses Buku"
+        size="md"
+      >
+        {accessBook && (
+          <BookAccessManager
+            bookId={accessBook.id}
+            bookTitle={accessBook.title}
+            initialAccessType={accessBook.access_type ?? 'public'}
+            onClose={() => { setAccessBook(null); fetchBooks() }}
+          />
+        )}
       </Modal>
 
       {/* Confirm Delete */}
@@ -340,7 +375,7 @@ export default function AdminBooksPage() {
         onConfirm={handleDelete}
         loading={deleting}
         title="Hapus Buku"
-        message={`Yakin ingin menghapus "${deleteBook?.title}"? File PDF dan data terkait akan ikut dihapus dan tidak bisa dikembalikan.`}
+        message={`Yakin ingin menghapus "${deleteBook?.title}"? File PDF dan data terkait akan ikut dihapus.`}
         confirmLabel="Ya, Hapus"
         danger
       />

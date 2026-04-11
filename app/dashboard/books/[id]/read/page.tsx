@@ -1,10 +1,8 @@
-// app/dashboard/books/[id]/read/page.tsx
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/options'
 import { createAdminClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import { PDFViewerWrapper } from '@/components/PDFViewerWrapper'
-import Link from 'next/link'
 
 interface PageProps {
   params: { id: string } | Promise<{ id: string }>
@@ -30,13 +28,17 @@ export default async function ReadBookPage({ params, searchParams }: PageProps) 
 
   if (!book.file_url) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-900 text-white">
-        <div className="text-center">
-          <p className="text-xl mb-4">File PDF tidak tersedia</p>
-          <Link href={`/dashboard/books/${id}`} className="text-blue-400 hover:underline">
-            Kembali ke detail buku
-          </Link>
-        </div>
+      <div
+        style={{
+          height: '100vh',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: '#0d0d0d', color: 'rgba(255,255,255,0.6)',
+          fontFamily: 'monospace', flexDirection: 'column', gap: 16,
+        }}
+      >
+        <span style={{ fontSize: 40 }}>📄</span>
+        <p>File PDF tidak tersedia</p>
+        <a href={`/dashboard/books/${id}`} style={{ color: '#3b82f6' }}>← Kembali</a>
       </div>
     )
   }
@@ -47,8 +49,15 @@ export default async function ReadBookPage({ params, searchParams }: PageProps) 
 
   if (!signedUrl?.signedUrl) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-900 text-white">
-        <p>Gagal mengakses file. Coba lagi nanti.</p>
+      <div
+        style={{
+          height: '100vh',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: '#0d0d0d', color: 'rgba(255,255,255,0.6)',
+          fontFamily: 'monospace',
+        }}
+      >
+        Gagal mengakses file. Coba lagi nanti.
       </div>
     )
   }
@@ -57,29 +66,13 @@ export default async function ReadBookPage({ params, searchParams }: PageProps) 
   const isAdmin = session.user.role === 'admin'
 
   return (
-    <div className="h-screen flex flex-col bg-gray-900">
-      <div className="bg-gray-950 text-white px-4 py-2 flex items-center justify-between flex-shrink-0">
-        <Link
-          href={`/dashboard/books/${book.id}`}
-          className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition"
-        >
-          ← Kembali
-        </Link>
-        <h1 className="text-sm font-medium text-gray-200 truncate max-w-xs sm:max-w-md text-center">
-          {book.title}
-        </h1>
-        <div className="w-16" />
-      </div>
-
-      <div className="flex-1 overflow-hidden">
-        <PDFViewerWrapper
-          fileUrl={signedUrl.signedUrl}
-          bookId={book.id}
-          initialPage={initialPage}
-          totalPages={book.total_pages}
-          isAdmin={isAdmin}
-        />
-      </div>
-    </div>
+    <PDFViewerWrapper
+      fileUrl={signedUrl.signedUrl}
+      bookId={book.id}
+      bookTitle={book.title}
+      initialPage={initialPage}
+      totalPages={book.total_pages}
+      isAdmin={isAdmin}
+    />
   )
 }

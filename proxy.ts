@@ -23,7 +23,32 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token,
+      authorized: ({ token, req }) => {
+        const pathname = req.nextUrl.pathname
+
+        // Route publik — tidak butuh login
+        const publicRoutes = [
+          '/books',
+          '/auth/login',
+          '/auth/register',
+          '/auth/activate',
+          '/auth/reset-password',
+          '/auth/inactive',
+        ]
+
+        // Cek apakah path dimulai dengan route publik
+        const isPublic = publicRoutes.some(
+          (route) => pathname === route || pathname.startsWith(route + '/')
+        )
+
+        if (isPublic) return true
+
+        // API publik untuk buku
+        if (pathname.startsWith('/api/public/')) return true
+
+        // Semua route lain butuh token
+        return !!token
+      },
     },
   }
 )
@@ -34,5 +59,7 @@ export const config = {
     '/dashboard/:path*',
     '/notifications/:path*',
     '/settings/:path*',
+    '/books/:path*',
+    '/api/public/:path*',
   ],
 }

@@ -10,6 +10,7 @@ const PDFViewer = dynamic(
 interface Props {
   fileUrl: string
   bookId: string
+  bookTitle?: string
   initialPage?: number
   totalPages?: number
   isAdmin?: boolean

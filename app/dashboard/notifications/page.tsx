@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { formatRelativeTime } from '@/lib/utils'
 
@@ -20,7 +20,7 @@ interface NotifItem {
   }
 }
 
-type FilterType = 'all' | 'unread' | 'new_book' | 'announcement'
+type FilterType = 'all' | 'unread' | 'new_book' | 'announcement' | 'reading_reminder'
 
 const typeLabel: Record<string, string> = {
   new_book: '📗 Buku Baru',
@@ -59,21 +59,20 @@ export default function NotificationsPage() {
         limit: '15',
       })
 
-      if (activeTab === 'unread') params.set('filter', 'unread')
+      // Filter 'unread' dikirim sebagai filter param
+      if (activeTab === 'unread') {
+        params.set('filter', 'unread')
+      }
+
+      // Filter tipe dikirim ke server — bukan difilter di client
+      if (activeTab === 'new_book' || activeTab === 'announcement' || activeTab === 'reading_reminder') {
+        params.set('type', activeTab)
+      }
 
       const res = await fetch(`/api/notifications?${params}`)
       const data = await res.json()
 
-      let items: NotifItem[] = data.notifications ?? []
-
-      // Filter tipe di client side untuk new_book & announcement
-      if (activeTab === 'new_book' || activeTab === 'announcement') {
-        items = items.filter(
-          (n) => n.notification.type === activeTab
-        )
-      }
-
-      setNotifications(items)
+      setNotifications(data.notifications ?? [])
       setTotal(data.total ?? 0)
       setTotalPages(data.totalPages ?? 1)
     } catch (err) {
@@ -96,9 +95,7 @@ export default function NotificationsPage() {
     setMarkingAll(true)
     try {
       await fetch('/api/notifications/read-all', { method: 'PUT' })
-      setNotifications((prev) =>
-        prev.map((n) => ({ ...n, is_read: true }))
-      )
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })))
     } catch {
       // Silent fail
     } finally {
@@ -114,44 +111,50 @@ export default function NotificationsPage() {
       )
     }
 
-    if (
-      notif.notification.book_id &&
-      notif.notification.type === 'new_book'
-    ) {
+    if (notif.notification.book_id && notif.notification.type === 'new_book') {
       router.push(`/dashboard/books/${notif.notification.book_id}`)
     }
   }
 
   const unreadCount = notifications.filter((n) => !n.is_read).length
 
+  const emptyMessages: Record<FilterType, string> = {
+    all: 'Belum ada notifikasi',
+    unread: 'Semua notifikasi sudah dibaca',
+    new_book: 'Belum ada notifikasi buku baru',
+    announcement: 'Belum ada pengumuman',
+    reading_reminder: 'Belum ada pengingat',
+  }
+
   return (
     <div className="max-w-2xl">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
-            Notifikasi
-          </h1>
+          <h1 className="text-xl lg:text-2xl font-bold text-gray-900">Notifikasi</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            {total} notifikasi total
+            {total > 0 ? `${total} notifikasi` : 'Semua notifikasi'}
           </p>
         </div>
-        {unreadCount > 0 && (
-          <button
-            onClick={handleMarkAllRead}
-            disabled={markingAll}
-            className="flex items-center gap-1.5 text-sm text-blue-600
-              hover:text-blue-700 font-medium disabled:opacity-60
-              px-3 py-2 rounded-lg hover:bg-blue-50 transition"
+        <div className="flex items-center gap-2">
+          {unreadCount > 0 && (
+            <button
+              onClick={handleMarkAllRead}
+              disabled={markingAll}
+              className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium disabled:opacity-60 px-3 py-2 rounded-lg hover:bg-blue-50 transition"
+            >
+              {markingAll ? <LoadingSpinner size="sm" /> : <span>✓</span>}
+              Tandai Semua Dibaca
+            </button>
+          )}
+          <Link
+            href="/dashboard/settings/notifications"
+            className="text-sm text-gray-400 hover:text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-100 transition"
+            title="Pengaturan notifikasi"
           >
-            {markingAll ? (
-              <LoadingSpinner size="sm" />
-            ) : (
-              <span>✓</span>
-            )}
-            Tandai Semua Dibaca
-          </button>
-        )}
+            ⚙️
+          </Link>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -160,12 +163,11 @@ export default function NotificationsPage() {
           <button
             key={tab.key}
             onClick={() => handleTabChange(tab.key)}
-            className={`flex-1 min-w-max py-1.5 px-3 text-sm font-medium
-              rounded-lg transition whitespace-nowrap
-              ${activeTab === tab.key
+            className={`flex-1 min-w-max py-1.5 px-3 text-sm font-medium rounded-lg transition whitespace-nowrap ${
+              activeTab === tab.key
                 ? 'bg-white text-blue-600 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700'
-              }`}
+            }`}
           >
             {tab.label}
           </button>
@@ -181,11 +183,15 @@ export default function NotificationsPage() {
         ) : notifications.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-4xl mb-3">🔔</p>
-            <p className="text-gray-500 text-sm">
-              {activeTab === 'unread'
-                ? 'Semua notifikasi sudah dibaca'
-                : 'Belum ada notifikasi'}
-            </p>
+            <p className="text-gray-500 text-sm">{emptyMessages[activeTab]}</p>
+            {activeTab !== 'all' && (
+              <button
+                onClick={() => handleTabChange('all')}
+                className="mt-3 text-sm text-blue-600 hover:underline"
+              >
+                Lihat semua notifikasi →
+              </button>
+            )}
           </div>
         ) : (
           <div className="divide-y divide-gray-50">
@@ -193,14 +199,16 @@ export default function NotificationsPage() {
               <div
                 key={notif.id}
                 onClick={() => handleClickNotif(notif)}
-                className={`flex gap-4 p-4 lg:p-5 cursor-pointer
-                  hover:bg-gray-50 transition
-                  ${!notif.is_read ? 'bg-blue-50/40' : ''}`}
+                className={`flex gap-4 p-4 lg:p-5 cursor-pointer hover:bg-gray-50 transition ${
+                  !notif.is_read ? 'bg-blue-50/40' : ''
+                }`}
               >
                 {/* Icon */}
-                <div className={`w-10 h-10 rounded-full flex items-center
-                  justify-center text-lg flex-shrink-0
-                  ${!notif.is_read ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-lg flex-shrink-0 ${
+                    !notif.is_read ? 'bg-blue-100' : 'bg-gray-100'
+                  }`}
+                >
                   {typeIcon[notif.notification.type] ?? '🔔'}
                 </div>
 
@@ -213,26 +221,25 @@ export default function NotificationsPage() {
                           {typeLabel[notif.notification.type] ?? 'Notifikasi'}
                         </span>
                         {!notif.is_read && (
-                          <span className="w-1.5 h-1.5 rounded-full
-                            bg-blue-500 inline-block" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
                         )}
                       </div>
-                      <p className={`text-sm leading-snug
-                        ${!notif.is_read
-                          ? 'font-semibold text-gray-900'
-                          : 'font-medium text-gray-700'
-                        }`}>
+                      <p
+                        className={`text-sm leading-snug ${
+                          !notif.is_read
+                            ? 'font-semibold text-gray-900'
+                            : 'font-medium text-gray-700'
+                        }`}
+                      >
                         {notif.notification.title}
                       </p>
-                      <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+                      <p className="text-sm text-gray-500 mt-1 leading-relaxed line-clamp-2">
                         {notif.notification.body}
                       </p>
 
                       {/* Link ke buku jika ada */}
-                      {notif.notification.book_id &&
-                        notif.notification.type === 'new_book' && (
-                        <span className="inline-flex items-center gap-1 mt-2
-                          text-xs text-blue-600 font-medium">
+                      {notif.notification.book_id && notif.notification.type === 'new_book' && (
+                        <span className="inline-flex items-center gap-1 mt-2 text-xs text-blue-600 font-medium">
                           Lihat buku →
                         </span>
                       )}
@@ -249,31 +256,41 @@ export default function NotificationsPage() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="px-5 py-4 border-t border-gray-100
-            flex items-center justify-between">
+          <div className="px-5 py-4 border-t border-gray-100 flex items-center justify-between">
             <p className="text-sm text-gray-500">
               {page} / {totalPages}
+              {total > 0 && (
+                <span className="text-gray-400 ml-1">({total} total)</span>
+              )}
             </p>
             <div className="flex gap-2">
               <button
                 onClick={() => setPage((p) => p - 1)}
                 disabled={page === 1}
-                className="px-3 py-1.5 text-sm border border-gray-200
-                  rounded-lg hover:bg-gray-50 disabled:opacity-40 transition"
+                className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 transition"
               >
                 ← Prev
               </button>
               <button
                 onClick={() => setPage((p) => p + 1)}
                 disabled={page === totalPages}
-                className="px-3 py-1.5 text-sm border border-gray-200
-                  rounded-lg hover:bg-gray-50 disabled:opacity-40 transition"
+                className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 transition"
               >
                 Next →
               </button>
             </div>
           </div>
         )}
+      </div>
+
+      {/* Bottom link ke pengaturan */}
+      <div className="mt-4 text-center">
+        <Link
+          href="/dashboard/settings/notifications"
+          className="text-sm text-gray-400 hover:text-gray-600 transition"
+        >
+          ⚙️ Atur preferensi notifikasi
+        </Link>
       </div>
     </div>
   )

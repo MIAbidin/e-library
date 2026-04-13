@@ -4,13 +4,12 @@ import { authOptions } from '@/lib/auth/options'
 import { createAdminClient } from '@/lib/supabase/server'
 
 // DELETE /api/admin/notifications/[id]
-// Hapus notifikasi beserta semua user_notifications terkait
 export async function DELETE(
   _req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await context.params
+    const { id } = params
 
     const session = await getServerSession(authOptions)
     if (!session || session.user.role !== 'admin') {
@@ -19,13 +18,13 @@ export async function DELETE(
 
     const supabase = createAdminClient()
 
-    // Hapus user_notifications dulu (foreign key)
+    // Hapus relasi dulu (foreign key safety)
     await supabase
       .from('user_notifications')
       .delete()
       .eq('notification_id', id)
 
-    // Hapus notifikasi
+    // Hapus notifikasi utama
     const { error } = await supabase
       .from('notifications')
       .delete()
@@ -36,6 +35,9 @@ export async function DELETE(
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('DELETE /api/admin/notifications/[id] error:', error)
-    return NextResponse.json({ error: 'Gagal menghapus notifikasi' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Gagal menghapus notifikasi' },
+      { status: 500 }
+    )
   }
 }

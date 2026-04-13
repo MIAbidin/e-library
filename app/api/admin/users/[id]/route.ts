@@ -2,17 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/options'
 import { createAdminClient } from '@/lib/supabase/server'
-import { sendEmail } from '@/lib/email/sender'
-import { resetPasswordEmailTemplate } from '@/lib/email/templates/reset-password'
-import crypto from 'crypto'
 
 // GET — detail user + statistik aktivitas
 export async function GET(
   _req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await context.params
+    const { id } = params
 
     const session = await getServerSession(authOptions)
     if (!session || session.user.role !== 'admin') {
@@ -42,10 +39,11 @@ export async function GET(
       .select('end_page, start_page')
       .eq('user_id', id)
 
-    const totalPages = pagesData?.reduce(
-      (sum, s) => sum + Math.max(0, s.end_page - s.start_page),
-      0
-    ) ?? 0
+    const totalPages =
+      pagesData?.reduce(
+        (sum, s) => sum + Math.max(0, (s.end_page ?? 0) - (s.start_page ?? 0)),
+        0
+      ) ?? 0
 
     const { count: booksCompleted } = await supabase
       .from('book_completions')
@@ -62,17 +60,20 @@ export async function GET(
     })
   } catch (error) {
     console.error('GET /api/admin/users/[id] error:', error)
-    return NextResponse.json({ error: 'Gagal mengambil data user' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Gagal mengambil data user' },
+      { status: 500 }
+    )
   }
 }
 
 // PUT — update profil user
 export async function PUT(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await context.params
+    const { id } = params
 
     const session = await getServerSession(authOptions)
     if (!session || session.user.role !== 'admin') {
@@ -86,7 +87,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Nama wajib diisi' }, { status: 400 })
     }
 
-    // Jangan bisa ubah role atau nonaktifkan diri sendiri
+    // Proteksi: tidak bisa ubah diri sendiri
     if (id === session.user.id) {
       if (role && role !== session.user.role) {
         return NextResponse.json(
@@ -103,10 +104,12 @@ export async function PUT(
     }
 
     const supabase = createAdminClient()
+
     const updateData: Record<string, unknown> = {
       name: name.trim(),
       department: department?.trim() || null,
     }
+
     if (role !== undefined) updateData.role = role
     if (is_active !== undefined) updateData.is_active = is_active
 
@@ -122,24 +125,26 @@ export async function PUT(
     return NextResponse.json(data)
   } catch (error) {
     console.error('PUT /api/admin/users/[id] error:', error)
-    return NextResponse.json({ error: 'Gagal mengupdate user' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Gagal mengupdate user' },
+      { status: 500 }
+    )
   }
 }
 
 // DELETE — hapus user permanen
 export async function DELETE(
   _req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await context.params
+    const { id } = params
 
     const session = await getServerSession(authOptions)
     if (!session || session.user.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Tidak bisa hapus diri sendiri
     if (id === session.user.id) {
       return NextResponse.json(
         { error: 'Tidak bisa menghapus akun sendiri' },
@@ -149,7 +154,7 @@ export async function DELETE(
 
     const supabase = createAdminClient()
 
-    // Hapus data terkait user dulu
+    // Hapus data relasi dulu
     await Promise.allSettled([
       supabase.from('read_history').delete().eq('user_id', id),
       supabase.from('reading_sessions').delete().eq('user_id', id),
@@ -170,6 +175,9 @@ export async function DELETE(
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('DELETE /api/admin/users/[id] error:', error)
-    return NextResponse.json({ error: 'Gagal menghapus user' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Gagal menghapus user' },
+      { status: 500 }
+    )
   }
 }

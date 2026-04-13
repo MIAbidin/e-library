@@ -7,16 +7,13 @@ import { resetPasswordEmailTemplate } from '@/lib/email/templates/reset-password
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 
-// POST — ada 2 mode:
-// 1. Admin trigger reset (body: { adminTrigger: true }) → kirim email reset ke user
-// 2. User konfirmasi reset (body: { token, password }) → set password baru
-
+// POST — reset password (admin trigger / user confirm)
 export async function POST(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id: userId } = await context.params
+    const userId = params.id
     const body = await request.json()
 
     // ── MODE 1: Admin trigger reset password ──
@@ -35,11 +32,14 @@ export async function POST(
         .single()
 
       if (!user) {
-        return NextResponse.json({ error: 'User tidak ditemukan' }, { status: 404 })
+        return NextResponse.json(
+          { error: 'User tidak ditemukan' },
+          { status: 404 }
+        )
       }
 
       const resetToken = crypto.randomBytes(32).toString('hex')
-      const tokenExpires = new Date(Date.now() + 60 * 60 * 1000) // 1 jam
+      const tokenExpires = new Date(Date.now() + 60 * 60 * 1000)
 
       await supabase
         .from('users')
@@ -54,14 +54,17 @@ export async function POST(
       const emailResult = await sendEmail({
         to: user.email,
         subject: 'Reset Password E-Library Perusahaan',
-        html: resetPasswordEmailTemplate({ name: user.name, resetUrl }),
+        html: resetPasswordEmailTemplate({
+          name: user.name,
+          resetUrl,
+        }),
       })
 
       return NextResponse.json({
         success: true,
         emailSent: emailResult.success,
-        // Hanya tampil di development
-        resetUrl: process.env.NODE_ENV === 'development' ? resetUrl : undefined,
+        resetUrl:
+          process.env.NODE_ENV === 'development' ? resetUrl : undefined,
       })
     }
 
@@ -69,10 +72,17 @@ export async function POST(
     const { token, password } = body
 
     if (!token || !password) {
-      return NextResponse.json({ error: 'Data tidak lengkap' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Data tidak lengkap' },
+        { status: 400 }
+      )
     }
+
     if (password.length < 8) {
-      return NextResponse.json({ error: 'Password minimal 8 karakter' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Password minimal 8 karakter' },
+        { status: 400 }
+      )
     }
 
     const supabase = createAdminClient()
@@ -85,11 +95,17 @@ export async function POST(
       .single()
 
     if (!user) {
-      return NextResponse.json({ error: 'Token tidak valid' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Token tidak valid' },
+        { status: 400 }
+      )
     }
 
     if (new Date(user.reset_token_expires) < new Date()) {
-      return NextResponse.json({ error: 'Token sudah kadaluarsa' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Token sudah kadaluarsa' },
+        { status: 400 }
+      )
     }
 
     const passwordHash = await bcrypt.hash(password, 10)
@@ -107,7 +123,13 @@ export async function POST(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('POST /api/admin/users/[id]/reset-password error:', error)
-    return NextResponse.json({ error: 'Gagal reset password' }, { status: 500 })
+    console.error(
+      'POST /api/admin/users/[id]/reset-password error:',
+      error
+    )
+    return NextResponse.json(
+      { error: 'Gagal reset password' },
+      { status: 500 }
+    )
   }
 }

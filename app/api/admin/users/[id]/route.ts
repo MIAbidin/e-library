@@ -6,10 +6,10 @@ import { createAdminClient } from '@/lib/supabase/server'
 // GET — detail user + statistik aktivitas
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await context.params
 
     const session = await getServerSession(authOptions)
     if (!session || session.user.role !== 'admin') {
@@ -28,7 +28,6 @@ export async function GET(
       return NextResponse.json({ error: 'User tidak ditemukan' }, { status: 404 })
     }
 
-    // Statistik aktivitas
     const { count: booksRead } = await supabase
       .from('read_history')
       .select('*', { count: 'exact', head: true })
@@ -70,10 +69,10 @@ export async function GET(
 // PUT — update profil user
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await context.params
 
     const session = await getServerSession(authOptions)
     if (!session || session.user.role !== 'admin') {
@@ -87,7 +86,6 @@ export async function PUT(
       return NextResponse.json({ error: 'Nama wajib diisi' }, { status: 400 })
     }
 
-    // Proteksi: tidak bisa ubah diri sendiri
     if (id === session.user.id) {
       if (role && role !== session.user.role) {
         return NextResponse.json(
@@ -135,10 +133,10 @@ export async function PUT(
 // DELETE — hapus user permanen
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await context.params
 
     const session = await getServerSession(authOptions)
     if (!session || session.user.role !== 'admin') {
@@ -154,7 +152,6 @@ export async function DELETE(
 
     const supabase = createAdminClient()
 
-    // Hapus data relasi dulu
     await Promise.allSettled([
       supabase.from('read_history').delete().eq('user_id', id),
       supabase.from('reading_sessions').delete().eq('user_id', id),

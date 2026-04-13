@@ -10,15 +10,18 @@ import crypto from 'crypto'
 // POST — reset password (admin trigger / user confirm)
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = params.id
+    // ✅ FIX: params harus di-await
+    const { id: userId } = await context.params
+
     const body = await request.json()
 
     // ── MODE 1: Admin trigger reset password ──
     if (body.adminTrigger === true) {
       const session = await getServerSession(authOptions)
+
       if (!session || session.user.role !== 'admin') {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
@@ -38,6 +41,7 @@ export async function POST(
         )
       }
 
+      // Generate token reset
       const resetToken = crypto.randomBytes(32).toString('hex')
       const tokenExpires = new Date(Date.now() + 60 * 60 * 1000)
 
@@ -108,6 +112,7 @@ export async function POST(
       )
     }
 
+    // Hash password baru
     const passwordHash = await bcrypt.hash(password, 10)
 
     const { error } = await supabase
@@ -127,6 +132,7 @@ export async function POST(
       'POST /api/admin/users/[id]/reset-password error:',
       error
     )
+
     return NextResponse.json(
       { error: 'Gagal reset password' },
       { status: 500 }

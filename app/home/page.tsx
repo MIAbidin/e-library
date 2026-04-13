@@ -35,25 +35,30 @@ export default async function HomePage() {
     ? session.user.role === 'admin' ? '/admin' : '/dashboard'
     : null
 
-  const categoryColors = [
-    { bg: 'rgba(59,130,246,0.15)', text: '#60a5fa', border: 'rgba(59,130,246,0.25)', icon: '💼' },
-    { bg: 'rgba(16,185,129,0.15)', text: '#34d399', border: 'rgba(16,185,129,0.25)', icon: '📈' },
-    { bg: 'rgba(139,92,246,0.15)', text: '#a78bfa', border: 'rgba(139,92,246,0.25)', icon: '💡' },
-    { bg: 'rgba(245,158,11,0.15)', text: '#fbbf24', border: 'rgba(245,158,11,0.25)', icon: '🎯' },
-    { bg: 'rgba(239,68,68,0.15)', text: '#f87171', border: 'rgba(239,68,68,0.25)', icon: '🚀' },
-    { bg: 'rgba(20,184,166,0.15)', text: '#2dd4bf', border: 'rgba(20,184,166,0.25)', icon: '🌿' },
+  const categoryIcons = [
+    'fa-briefcase',
+    'fa-chart-line',
+    'fa-lightbulb',
+    'fa-bullseye',
+    'fa-rocket',
+    'fa-leaf',
   ]
 
   return (
     <>
+      {/* Font Awesome CDN */}
+      <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        crossOrigin="anonymous"
+      />
+
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,300;1,9..144,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,300;1,9..144,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
 
-        /* ── CSS VARS: light defaults, dark override ── */
         .hp-root {
           --hp-bg:          #f8f6f2;
           --hp-surface:     #ffffff;
@@ -72,12 +77,10 @@ export default async function HomePage() {
           --hp-card-shadow: 0 2px 16px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04);
           --hp-card-hover:  0 8px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
           --hp-nav-bg:      rgba(248,246,242,0.92);
-          --hp-gold:        #c8832a;
-          --hp-green:       #15803d;
           --hp-strip-bg:    #13111a;
+          --hp-fa-color:    #60a5fa;
         }
 
-        /* ── DARK MODE ── */
         [data-theme="dark"] .hp-root {
           --hp-bg:          #0a0d14;
           --hp-surface:     #111520;
@@ -96,9 +99,8 @@ export default async function HomePage() {
           --hp-card-shadow: 0 2px 16px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.2);
           --hp-card-hover:  0 8px 40px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3);
           --hp-nav-bg:      rgba(10,13,20,0.92);
-          --hp-gold:        #f0a832;
-          --hp-green:       #4ade80;
           --hp-strip-bg:    #07090f;
+          --hp-fa-color:    #93b4f8;
         }
 
         .hp-root {
@@ -128,17 +130,21 @@ export default async function HomePage() {
         }
 
         .hp-logo {
-          display: flex; align-items: center; gap: 10px;
+          display: flex; align-items: center; gap: 12px;
           text-decoration: none; flex-shrink: 0;
         }
 
         .hp-logo-mark {
-          width: 36px; height: 36px;
+          width: 38px; height: 38px;
           background: linear-gradient(135deg, #1e4bd8 0%, #7c3aed 100%);
           border-radius: 10px;
           display: flex; align-items: center; justify-content: center;
-          font-size: 18px;
           box-shadow: 0 2px 12px rgba(30,75,216,0.35);
+        }
+
+        .hp-logo-mark i {
+          color: white;
+          font-size: 16px;
         }
 
         .hp-logo-text {
@@ -156,49 +162,41 @@ export default async function HomePage() {
 
         .hp-nav-link {
           text-decoration: none;
-          font-size: 0.875rem;
-          font-weight: 500;
+          font-size: 0.875rem; font-weight: 500;
           color: var(--hp-text-2);
-          padding: 7px 14px;
-          border-radius: 8px;
+          padding: 7px 14px; border-radius: 8px;
           transition: color 0.2s, background 0.2s;
+          display: flex; align-items: center; gap: 6px;
           white-space: nowrap;
         }
+        .hp-nav-link i { font-size: 12px; opacity: 0.7; }
         .hp-nav-link:hover {
           color: var(--hp-text);
           background: var(--hp-border);
         }
 
-        .hp-nav-actions {
-          display: flex; align-items: center; gap: 8px; flex-shrink: 0;
-        }
+        .hp-nav-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
         .hp-btn-ghost {
           text-decoration: none;
           font-size: 0.875rem; font-weight: 600;
           color: var(--hp-text-2);
-          padding: 8px 16px;
-          border-radius: 8px;
+          padding: 8px 16px; border-radius: 8px;
           border: 1px solid var(--hp-border);
-          transition: all 0.2s;
-          white-space: nowrap;
+          transition: all 0.2s; white-space: nowrap;
+          display: flex; align-items: center; gap: 6px;
         }
-        .hp-btn-ghost:hover {
-          color: var(--hp-text);
-          border-color: var(--hp-text-3);
-        }
+        .hp-btn-ghost:hover { color: var(--hp-text); border-color: var(--hp-text-3); }
 
         .hp-btn-primary {
           text-decoration: none;
           font-size: 0.875rem; font-weight: 700;
-          color: #fff;
-          background: var(--hp-accent);
-          padding: 9px 20px;
-          border-radius: 9px;
-          transition: all 0.2s;
-          white-space: nowrap;
+          color: #fff; background: var(--hp-accent);
+          padding: 9px 20px; border-radius: 9px;
+          transition: all 0.2s; white-space: nowrap;
           box-shadow: 0 2px 12px var(--hp-accent-glow);
           letter-spacing: -0.01em;
+          display: flex; align-items: center; gap: 7px;
         }
         .hp-btn-primary:hover {
           background: var(--hp-accent-hover);
@@ -210,8 +208,7 @@ export default async function HomePage() {
         .hp-hero {
           background: var(--hp-hero-bg);
           min-height: 92vh;
-          position: relative;
-          overflow: hidden;
+          position: relative; overflow: hidden;
           display: flex; flex-direction: column; justify-content: center;
         }
 
@@ -250,7 +247,7 @@ export default async function HomePage() {
           border: 1px solid rgba(30,75,216,0.3);
           color: #93b4f8;
           font-size: 0.6875rem; font-weight: 700;
-          padding: 5px 12px 5px 8px; border-radius: 100px;
+          padding: 5px 12px 5px 10px; border-radius: 100px;
           margin-bottom: 1.75rem;
           letter-spacing: 0.08em; text-transform: uppercase;
         }
@@ -268,28 +265,19 @@ export default async function HomePage() {
         .hp-hero-title {
           font-family: 'Fraunces', serif;
           font-size: clamp(2.75rem, 4.5vw, 4.25rem);
-          font-weight: 700;
-          color: var(--hp-hero-text);
-          line-height: 1.1;
-          letter-spacing: -0.03em;
-          margin-bottom: 1.5rem;
+          font-weight: 700; color: var(--hp-hero-text);
+          line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 1.5rem;
         }
 
         .hp-hero-title-italic {
-          font-style: italic;
-          color: transparent;
+          font-style: italic; color: transparent;
           background: linear-gradient(90deg, #93b4f8, #c084fc);
-          -webkit-background-clip: text;
-          background-clip: text;
-          display: block;
+          -webkit-background-clip: text; background-clip: text; display: block;
         }
 
         .hp-hero-desc {
-          font-size: 1.0625rem;
-          color: var(--hp-hero-text-2);
-          line-height: 1.75;
-          margin-bottom: 2.5rem;
-          max-width: 460px;
+          font-size: 1.0625rem; color: var(--hp-hero-text-2);
+          line-height: 1.75; margin-bottom: 2.5rem; max-width: 460px;
         }
 
         .hp-hero-actions {
@@ -299,34 +287,28 @@ export default async function HomePage() {
 
         .hp-cta-big {
           display: inline-flex; align-items: center; gap: 10px;
-          background: #1e4bd8;
-          color: white;
-          text-decoration: none;
+          background: #1e4bd8; color: white; text-decoration: none;
           font-size: 0.9375rem; font-weight: 700;
-          padding: 14px 28px; border-radius: 12px;
-          transition: all 0.2s;
+          padding: 14px 28px; border-radius: 12px; transition: all 0.2s;
           letter-spacing: -0.01em;
           box-shadow: 0 4px 20px rgba(30,75,216,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
         }
         .hp-cta-big:hover {
-          background: #1539b0;
-          transform: translateY(-2px);
+          background: #1539b0; transform: translateY(-2px);
           box-shadow: 0 8px 30px rgba(30,75,216,0.45), inset 0 1px 0 rgba(255,255,255,0.15);
         }
+        .hp-cta-big i { font-size: 14px; }
 
         .hp-cta-outline {
           display: inline-flex; align-items: center; gap: 8px;
-          color: rgba(244,240,255,0.7);
-          text-decoration: none;
+          color: rgba(244,240,255,0.7); text-decoration: none;
           font-size: 0.9375rem; font-weight: 500;
           padding: 13px 24px; border-radius: 12px;
-          border: 1px solid rgba(255,255,255,0.12);
-          transition: all 0.2s;
+          border: 1px solid rgba(255,255,255,0.12); transition: all 0.2s;
         }
         .hp-cta-outline:hover {
           color: rgba(244,240,255,0.95);
-          border-color: rgba(255,255,255,0.25);
-          background: rgba(255,255,255,0.05);
+          border-color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.05);
         }
 
         .hp-hero-stats {
@@ -334,44 +316,35 @@ export default async function HomePage() {
           padding-top: 2rem;
         }
 
-        .hp-stat {
-          flex: 1; padding-right: 2rem;
-        }
+        .hp-stat { flex: 1; padding-right: 2rem; }
         .hp-stat + .hp-stat {
           padding-left: 2rem; padding-right: 2rem;
           border-left: 1px solid rgba(255,255,255,0.08);
         }
         .hp-stat:last-child { padding-right: 0; }
 
+        .hp-stat-icon {
+          font-size: 1rem; color: var(--hp-fa-color);
+          margin-bottom: 6px; display: block;
+        }
+
         .hp-stat-num {
           font-family: 'Fraunces', serif;
           font-size: 2.25rem; font-weight: 700;
-          color: var(--hp-hero-text);
-          line-height: 1;
-          letter-spacing: -0.03em;
+          color: var(--hp-hero-text); line-height: 1; letter-spacing: -0.03em;
         }
 
         .hp-stat-label {
-          font-size: 0.8125rem;
-          color: var(--hp-hero-text-2);
-          margin-top: 5px;
+          font-size: 0.8125rem; color: var(--hp-hero-text-2); margin-top: 5px;
         }
 
-        /* ── HERO VISUAL PANEL ── */
-        .hp-hero-visual {
-          position: relative;
-        }
+        /* ── HERO VISUAL ── */
+        .hp-hero-visual { position: relative; }
 
-        .hp-book-showcase {
-          position: relative;
-          height: 480px;
-        }
+        .hp-book-showcase { position: relative; height: 480px; }
 
         .hp-book-float {
-          position: absolute;
-          background: var(--hp-surface);
-          border-radius: 14px;
-          overflow: hidden;
+          position: absolute; border-radius: 14px; overflow: hidden;
           box-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 4px 16px rgba(0,0,0,0.3);
           transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
@@ -389,35 +362,23 @@ export default async function HomePage() {
 
         .hp-book-cover {
           width: 100%; height: 100%;
-          display: flex; flex-direction: column;
-          align-items: center; justify-content: flex-end;
-          padding: 12px;
-          font-size: 2.5rem;
+          display: flex; flex-direction: column; align-items: center;
+          justify-content: center; gap: 8px;
         }
 
-        .hp-book-info {
-          text-align: center;
-        }
-
-        .hp-book-title {
-          font-size: 0.65rem; font-weight: 700;
-          color: rgba(255,255,255,0.9);
-          line-height: 1.3;
-          display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-          text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+        .hp-book-cover i {
+          font-size: 2.5rem; color: rgba(255,255,255,0.85);
         }
 
         .hp-float-badge {
           position: absolute;
           background: var(--hp-surface);
           border: 1px solid var(--hp-border);
-          border-radius: 14px;
-          padding: 12px 18px;
+          border-radius: 14px; padding: 12px 18px;
           box-shadow: 0 8px 40px rgba(0,0,0,0.25);
           display: flex; align-items: center; gap: 10px;
           font-size: 0.8125rem; font-weight: 600;
-          color: var(--hp-text);
-          white-space: nowrap;
+          color: var(--hp-text); white-space: nowrap;
         }
 
         .hp-badge-1 { bottom: 20px; left: -20px; animation: floatA 5s ease-in-out infinite; }
@@ -431,9 +392,10 @@ export default async function HomePage() {
         .hp-badge-icon {
           width: 32px; height: 32px; border-radius: 8px;
           display: flex; align-items: center; justify-content: center;
-          font-size: 16px;
+          font-size: 14px;
         }
 
+        .hp-badge-icon i { font-size: 14px; }
         .hp-badge-label { color: var(--hp-text-3); font-size: 0.6875rem; font-weight: 400; }
 
         /* ── MARQUEE STRIP ── */
@@ -441,8 +403,7 @@ export default async function HomePage() {
           background: var(--hp-strip-bg);
           border-top: 1px solid rgba(255,255,255,0.06);
           border-bottom: 1px solid rgba(255,255,255,0.06);
-          padding: 14px 0;
-          overflow: hidden;
+          padding: 14px 0; overflow: hidden;
         }
 
         .hp-marquee-track {
@@ -456,65 +417,53 @@ export default async function HomePage() {
           display: flex; align-items: center; gap: 10px;
           color: rgba(255,255,255,0.35);
           font-size: 0.8125rem; font-weight: 500;
-          white-space: nowrap;
-          letter-spacing: 0.02em;
+          white-space: nowrap; letter-spacing: 0.02em;
         }
 
-        .hp-marquee-dot {
-          width: 4px; height: 4px; border-radius: 50%;
-          background: rgba(255,255,255,0.2);
-        }
+        .hp-marquee-item i { color: rgba(255,255,255,0.2); font-size: 11px; }
+        .hp-marquee-dot { width: 4px; height: 4px; border-radius: 50%; background: rgba(255,255,255,0.2); }
 
-        /* ── FEATURES SECTION ── */
-        .hp-section {
-          padding: 6rem 5%;
-          max-width: 1280px; margin: 0 auto;
-        }
+        /* ── SECTION ── */
+        .hp-section { padding: 6rem 5%; max-width: 1280px; margin: 0 auto; }
 
         .hp-section-label {
           font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.12em;
-          text-transform: uppercase; color: var(--hp-accent);
-          margin-bottom: 0.875rem;
+          text-transform: uppercase; color: var(--hp-accent); margin-bottom: 0.875rem;
+          display: flex; align-items: center; gap: 6px;
         }
+        .hp-section-label i { font-size: 10px; }
 
         .hp-section-title {
           font-family: 'Fraunces', serif;
           font-size: clamp(2rem, 3vw, 2.75rem);
           font-weight: 700; font-style: italic;
-          color: var(--hp-text);
-          line-height: 1.15; letter-spacing: -0.025em;
-          margin-bottom: 1rem;
+          color: var(--hp-text); line-height: 1.15;
+          letter-spacing: -0.025em; margin-bottom: 1rem;
         }
 
         .hp-section-desc {
-          font-size: 1rem; color: var(--hp-text-2);
-          line-height: 1.7; max-width: 520px;
+          font-size: 1rem; color: var(--hp-text-2); line-height: 1.7; max-width: 520px;
         }
 
+        /* ── FEATURES GRID ── */
         .hp-features-grid {
           display: grid; grid-template-columns: repeat(3, 1fr);
           gap: 1.5px;
           background: var(--hp-border);
           border: 1px solid var(--hp-border);
-          border-radius: 20px;
-          overflow: hidden;
-          margin-top: 3.5rem;
+          border-radius: 20px; overflow: hidden; margin-top: 3.5rem;
         }
 
         .hp-feature {
-          background: var(--hp-surface);
-          padding: 2.5rem 2rem;
-          transition: background 0.2s;
-          position: relative;
-          overflow: hidden;
+          background: var(--hp-surface); padding: 2.5rem 2rem;
+          transition: background 0.2s; position: relative; overflow: hidden;
         }
 
         .hp-feature::before {
           content: '';
           position: absolute; top: 0; left: 0; right: 0; height: 1px;
           background: linear-gradient(90deg, transparent, var(--hp-accent-glow), transparent);
-          opacity: 0;
-          transition: opacity 0.3s;
+          opacity: 0; transition: opacity 0.3s;
         }
 
         .hp-feature:hover { background: var(--hp-surface2); }
@@ -523,29 +472,25 @@ export default async function HomePage() {
         .hp-feature-num {
           font-family: 'Fraunces', serif;
           font-size: 0.75rem; font-weight: 700; font-style: italic;
-          color: var(--hp-text-3); letter-spacing: 0.05em;
-          margin-bottom: 1.25rem;
+          color: var(--hp-text-3); letter-spacing: 0.05em; margin-bottom: 1.25rem;
         }
 
         .hp-feature-icon {
-          width: 44px; height: 44px; border-radius: 11px;
+          width: 48px; height: 48px; border-radius: 12px;
           display: flex; align-items: center; justify-content: center;
-          font-size: 1.375rem; margin-bottom: 1.25rem;
-          background: var(--hp-surface2);
-          border: 1px solid var(--hp-border);
+          font-size: 1.25rem; margin-bottom: 1.25rem;
+          background: var(--hp-surface2); border: 1px solid var(--hp-border);
           transition: transform 0.2s;
         }
+        .hp-feature-icon i { color: var(--hp-accent); }
         .hp-feature:hover .hp-feature-icon { transform: scale(1.1) rotate(-3deg); }
 
         .hp-feature-title {
-          font-size: 1rem; font-weight: 700;
-          color: var(--hp-text);
+          font-size: 1rem; font-weight: 700; color: var(--hp-text);
           margin-bottom: 0.625rem; letter-spacing: -0.01em;
         }
 
-        .hp-feature-desc {
-          font-size: 0.875rem; color: var(--hp-text-2); line-height: 1.65;
-        }
+        .hp-feature-desc { font-size: 0.875rem; color: var(--hp-text-2); line-height: 1.65; }
 
         /* ── BOOKS SHOWCASE ── */
         .hp-books-wrap {
@@ -555,10 +500,7 @@ export default async function HomePage() {
           padding: 5rem 0;
         }
 
-        .hp-books-inner {
-          max-width: 1280px; margin: 0 auto;
-          padding: 0 5%;
-        }
+        .hp-books-inner { max-width: 1280px; margin: 0 auto; padding: 0 5%; }
 
         .hp-books-header {
           display: flex; align-items: flex-end; justify-content: space-between;
@@ -568,24 +510,19 @@ export default async function HomePage() {
         .hp-see-all {
           text-decoration: none; color: var(--hp-accent);
           font-size: 0.875rem; font-weight: 600;
-          display: flex; align-items: center; gap: 6px;
-          transition: gap 0.2s;
+          display: flex; align-items: center; gap: 6px; transition: gap 0.2s;
         }
         .hp-see-all:hover { gap: 10px; }
 
         .hp-books-scroll {
-          display: grid; grid-template-columns: repeat(4, 1fr);
-          gap: 1.25rem;
+          display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem;
         }
 
         .hp-book-card {
-          background: var(--hp-surface);
-          border-radius: 16px;
-          overflow: hidden;
+          background: var(--hp-surface); border-radius: 16px; overflow: hidden;
           border: 1px solid var(--hp-border);
           transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-          text-decoration: none;
-          display: block;
+          text-decoration: none; display: block;
         }
         .hp-book-card:hover {
           transform: translateY(-6px);
@@ -593,22 +530,18 @@ export default async function HomePage() {
           border-color: var(--hp-accent-glow);
         }
 
-        .hp-book-card-cover {
-          aspect-ratio: 3/4;
-          position: relative;
-          overflow: hidden;
-        }
+        .hp-book-card-cover { aspect-ratio: 3/4; position: relative; overflow: hidden; }
 
         .hp-book-card-placeholder {
           width: 100%; height: 100%;
-          display: flex; flex-direction: column; align-items: center;
-          justify-content: center; gap: 8px;
-          font-size: 2.5rem;
+          display: flex; align-items: center; justify-content: center;
         }
 
-        .hp-book-card-body {
-          padding: 14px 14px 16px;
+        .hp-book-card-placeholder i {
+          font-size: 3rem; color: rgba(255,255,255,0.7);
         }
+
+        .hp-book-card-body { padding: 14px 14px 16px; }
 
         .hp-book-card-cat {
           font-size: 0.6875rem; font-weight: 700;
@@ -617,16 +550,13 @@ export default async function HomePage() {
         }
 
         .hp-book-card-title {
-          font-size: 0.875rem; font-weight: 700;
-          color: var(--hp-text);
+          font-size: 0.875rem; font-weight: 700; color: var(--hp-text);
           line-height: 1.35; letter-spacing: -0.01em;
           display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
           overflow: hidden; margin-bottom: 4px;
         }
 
-        .hp-book-card-author {
-          font-size: 0.75rem; color: var(--hp-text-3);
-        }
+        .hp-book-card-author { font-size: 0.75rem; color: var(--hp-text-3); }
 
         /* ── CATEGORIES ── */
         .hp-categories-grid {
@@ -635,42 +565,36 @@ export default async function HomePage() {
         }
 
         .hp-cat-card {
-          padding: 1.75rem 1.5rem;
-          border-radius: 16px;
-          border: 1px solid;
+          padding: 1.75rem 1.5rem; border-radius: 16px;
+          border: 1px solid var(--hp-border);
+          background: var(--hp-surface);
           text-decoration: none;
           display: flex; align-items: center; gap: 14px;
           transition: all 0.2s;
         }
-        .hp-cat-card:hover { transform: translateY(-3px); filter: brightness(1.05); }
+        .hp-cat-card:hover { transform: translateY(-3px); box-shadow: var(--hp-card-hover); }
 
         .hp-cat-icon {
-          font-size: 1.75rem; flex-shrink: 0;
+          width: 44px; height: 44px; border-radius: 12px;
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0;
         }
 
-        .hp-cat-name {
-          font-size: 0.9375rem; font-weight: 700;
-          color: var(--hp-text); letter-spacing: -0.01em;
-        }
+        .hp-cat-icon i { font-size: 1.125rem; }
 
-        .hp-cat-sub {
-          font-size: 0.75rem; color: var(--hp-text-3); margin-top: 3px;
-        }
+        .hp-cat-name { font-size: 0.9375rem; font-weight: 700; color: var(--hp-text); letter-spacing: -0.01em; }
+        .hp-cat-sub { font-size: 0.75rem; color: var(--hp-text-3); margin-top: 3px; display: flex; align-items: center; gap: 4px; }
 
         /* ── HOW IT WORKS ── */
         .hp-steps-wrap {
-          background: var(--hp-hero-bg);
-          padding: 6rem 5%;
+          background: var(--hp-hero-bg); padding: 6rem 5%;
         }
 
-        .hp-steps-inner {
-          max-width: 1280px; margin: 0 auto;
-        }
+        .hp-steps-inner { max-width: 1280px; margin: 0 auto; }
 
         .hp-steps-grid {
           display: grid; grid-template-columns: repeat(4, 1fr);
-          gap: 2rem; margin-top: 3.5rem;
-          position: relative;
+          gap: 2rem; margin-top: 3.5rem; position: relative;
         }
 
         .hp-steps-grid::before {
@@ -680,9 +604,7 @@ export default async function HomePage() {
           z-index: 0;
         }
 
-        .hp-step {
-          position: relative; z-index: 1; text-align: center;
-        }
+        .hp-step { position: relative; z-index: 1; text-align: center; }
 
         .hp-step-num {
           width: 56px; height: 56px; border-radius: 50%;
@@ -690,66 +612,43 @@ export default async function HomePage() {
           border: 1px solid rgba(255,255,255,0.1);
           display: flex; align-items: center; justify-content: center;
           margin: 0 auto 1.25rem;
-          font-family: 'Fraunces', serif;
-          font-size: 1.125rem; font-weight: 700; font-style: italic;
-          color: #93b4f8;
           box-shadow: 0 0 0 4px rgba(91,141,239,0.1);
         }
 
-        .hp-step-title {
-          font-size: 0.9375rem; font-weight: 700;
-          color: #e8e4f0; margin-bottom: 0.5rem;
-        }
+        .hp-step-num i { font-size: 1.25rem; color: #93b4f8; }
 
-        .hp-step-desc {
-          font-size: 0.8125rem; color: rgba(232,228,240,0.4);
-          line-height: 1.65;
-        }
+        .hp-step-title { font-size: 0.9375rem; font-weight: 700; color: #e8e4f0; margin-bottom: 0.5rem; }
+        .hp-step-desc { font-size: 0.8125rem; color: rgba(232,228,240,0.4); line-height: 1.65; }
 
-        /* ── TESTIMONIAL / QUOTE ── */
-        .hp-quote-wrap {
-          padding: 6rem 5%;
-          border-top: 1px solid var(--hp-border);
-        }
+        /* ── QUOTE ── */
+        .hp-quote-wrap { padding: 6rem 5%; border-top: 1px solid var(--hp-border); }
+        .hp-quote-inner { max-width: 900px; margin: 0 auto; text-align: center; }
 
-        .hp-quote-inner {
-          max-width: 900px; margin: 0 auto; text-align: center;
-        }
-
-        .hp-quote-mark {
-          font-family: 'Fraunces', serif;
-          font-size: 5rem; line-height: 0.6;
-          color: var(--hp-accent); opacity: 0.35;
-          display: block; margin-bottom: 1.5rem;
+        .hp-quote-icon {
+          font-size: 2rem; color: var(--hp-accent); opacity: 0.4;
+          margin-bottom: 1.5rem; display: block;
         }
 
         .hp-quote-text {
           font-family: 'Fraunces', serif;
-          font-size: clamp(1.5rem, 2.5vw, 2.25rem);
-          font-style: italic;
-          color: var(--hp-text);
-          line-height: 1.45; letter-spacing: -0.02em;
-          margin-bottom: 2rem;
+          font-size: clamp(1.5rem, 2.5vw, 2.25rem); font-style: italic;
+          color: var(--hp-text); line-height: 1.45;
+          letter-spacing: -0.02em; margin-bottom: 2rem;
         }
 
-        .hp-quote-author {
-          display: flex; align-items: center; justify-content: center; gap: 12px;
-        }
-
+        .hp-quote-author { display: flex; align-items: center; justify-content: center; gap: 12px; }
         .hp-quote-avatar {
           width: 40px; height: 40px; border-radius: 50%;
           background: linear-gradient(135deg, #1e4bd8, #7c3aed);
           display: flex; align-items: center; justify-content: center;
           font-weight: 700; color: white; font-size: 0.875rem;
         }
-
         .hp-quote-name { font-weight: 600; color: var(--hp-text); font-size: 0.875rem; }
         .hp-quote-role { font-size: 0.8125rem; color: var(--hp-text-3); }
 
         /* ── CTA BANNER ── */
         .hp-cta-wrap {
-          background: var(--hp-hero-bg);
-          padding: 7rem 5%;
+          background: var(--hp-hero-bg); padding: 7rem 5%;
           position: relative; overflow: hidden;
         }
 
@@ -774,13 +673,10 @@ export default async function HomePage() {
         }
 
         .hp-cta-desc {
-          font-size: 1.0625rem; color: rgba(236,232,255,0.5);
-          line-height: 1.7; margin-bottom: 2.5rem;
+          font-size: 1.0625rem; color: rgba(236,232,255,0.5); line-height: 1.7; margin-bottom: 2.5rem;
         }
 
-        .hp-cta-actions {
-          display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
-        }
+        .hp-cta-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
         /* ── FOOTER ── */
         .hp-footer {
@@ -791,29 +687,25 @@ export default async function HomePage() {
           flex-wrap: wrap; gap: 1rem;
         }
 
-        .hp-footer-logo {
-          display: flex; align-items: center; gap: 8px;
-          text-decoration: none;
+        .hp-footer-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; }
+
+        .hp-footer-logo-mark {
+          width: 28px; height: 28px; border-radius: 7px;
+          background: linear-gradient(135deg, #1e4bd8, #7c3aed);
+          display: flex; align-items: center; justify-content: center;
         }
 
-        .hp-footer-text {
-          font-family: 'Fraunces', serif;
-          font-size: 0.9375rem; font-weight: 600; font-style: italic;
-          color: rgba(255,255,255,0.4);
-        }
+        .hp-footer-logo-mark i { color: white; font-size: 12px; }
 
-        .hp-footer-copy {
-          font-size: 0.75rem; color: rgba(255,255,255,0.2);
-        }
+        .hp-footer-text { font-family: 'Fraunces', serif; font-size: 0.9375rem; font-weight: 600; font-style: italic; color: rgba(255,255,255,0.4); }
+        .hp-footer-copy { font-size: 0.75rem; color: rgba(255,255,255,0.2); }
 
-        .hp-footer-links {
-          display: flex; gap: 20px; align-items: center;
-        }
-
+        .hp-footer-links { display: flex; gap: 20px; align-items: center; }
         .hp-footer-link {
-          font-size: 0.8125rem; color: rgba(255,255,255,0.3);
-          text-decoration: none; transition: color 0.2s;
+          font-size: 0.8125rem; color: rgba(255,255,255,0.3); text-decoration: none; transition: color 0.2s;
+          display: flex; align-items: center; gap: 5px;
         }
+        .hp-footer-link i { font-size: 10px; }
         .hp-footer-link:hover { color: rgba(255,255,255,0.65); }
 
         /* ── RESPONSIVE ── */
@@ -848,27 +740,50 @@ export default async function HomePage() {
         <nav className="hp-nav">
           <div className="hp-nav-inner">
             <a href="/home" className="hp-logo">
-              <div className="hp-logo-mark">📚</div>
+              <div className="hp-logo-mark">
+                <i className="fa-solid fa-book-open"></i>
+              </div>
               <span className="hp-logo-text">E-Library</span>
             </a>
 
             <div className="hp-nav-links">
-              <a href="/books" className="hp-nav-link">Katalog Buku</a>
-              <a href="#fitur" className="hp-nav-link">Fitur</a>
-              <a href="#cara-kerja" className="hp-nav-link">Cara Kerja</a>
+              <a href="/books" className="hp-nav-link">
+                <i className="fa-solid fa-layer-group"></i>
+                Katalog Buku
+              </a>
+              <a href="#fitur" className="hp-nav-link">
+                <i className="fa-solid fa-star"></i>
+                Fitur
+              </a>
+              <a href="#cara-kerja" className="hp-nav-link">
+                <i className="fa-solid fa-circle-play"></i>
+                Cara Kerja
+              </a>
             </div>
 
             <div className="hp-nav-actions">
               <HomeThemeToggle />
               {session ? (
                 <>
-                  <a href={dashboardHref!} className="hp-btn-ghost">Dashboard</a>
-                  <a href={dashboardHref!} className="hp-btn-primary">Buka Aplikasi →</a>
+                  <a href={dashboardHref!} className="hp-btn-ghost">
+                    <i className="fa-solid fa-gauge-high"></i>
+                    Dashboard
+                  </a>
+                  <a href={dashboardHref!} className="hp-btn-primary">
+                    <i className="fa-solid fa-arrow-right-to-bracket"></i>
+                    Buka Aplikasi
+                  </a>
                 </>
               ) : (
                 <>
-                  <a href="/auth/login" className="hp-btn-ghost">Masuk</a>
-                  <a href="/auth/register" className="hp-btn-primary">Daftar Gratis</a>
+                  <a href="/auth/login" className="hp-btn-ghost">
+                    <i className="fa-solid fa-right-to-bracket"></i>
+                    Masuk
+                  </a>
+                  <a href="/auth/register" className="hp-btn-primary">
+                    <i className="fa-solid fa-user-plus"></i>
+                    Daftar Gratis
+                  </a>
                 </>
               )}
             </div>
@@ -894,7 +809,7 @@ export default async function HomePage() {
               </h1>
 
               <p className="hp-hero-desc">
-                Perpustakaan digital perusahaan dengan ribuan koleksi e-book terseleksi. 
+                Perpustakaan digital perusahaan dengan ribuan koleksi e-book terseleksi.
                 Baca kapan saja, lacak progres, dan terus berkembang bersama.
               </p>
 
@@ -902,19 +817,21 @@ export default async function HomePage() {
                 {session ? (
                   <>
                     <a href={dashboardHref!} className="hp-cta-big">
-                      <span>🏠</span> Buka Dashboard
+                      <i className="fa-solid fa-gauge-high"></i>
+                      Buka Dashboard
                     </a>
                     <a href="/books" className="hp-cta-outline">
-                      Jelajahi Koleksi →
+                      Jelajahi Koleksi <i className="fa-solid fa-arrow-right"></i>
                     </a>
                   </>
                 ) : (
                   <>
                     <a href="/auth/register" className="hp-cta-big">
-                      <span>✨</span> Mulai Gratis
+                      <i className="fa-solid fa-sparkles"></i>
+                      Mulai Gratis
                     </a>
                     <a href="/books" className="hp-cta-outline">
-                      Lihat Koleksi →
+                      Lihat Koleksi <i className="fa-solid fa-arrow-right"></i>
                     </a>
                   </>
                 )}
@@ -922,14 +839,17 @@ export default async function HomePage() {
 
               <div className="hp-hero-stats">
                 <div className="hp-stat">
+                  <i className="fa-solid fa-books hp-stat-icon"></i>
                   <div className="hp-stat-num">{totalBooks ?? 0}+</div>
                   <div className="hp-stat-label">Koleksi E-Book</div>
                 </div>
                 <div className="hp-stat">
+                  <i className="fa-solid fa-users hp-stat-icon"></i>
                   <div className="hp-stat-num">{totalUsers ?? 0}</div>
                   <div className="hp-stat-label">Pembaca Aktif</div>
                 </div>
                 <div className="hp-stat">
+                  <i className="fa-solid fa-tags hp-stat-icon"></i>
                   <div className="hp-stat-num">{totalCategories ?? 0}</div>
                   <div className="hp-stat-label">Kategori Topik</div>
                 </div>
@@ -939,27 +859,24 @@ export default async function HomePage() {
             {/* Visual */}
             <div className="hp-hero-visual">
               <div className="hp-book-showcase">
-                {/* Books */}
                 {[
-                  { cls: 'hp-book-1', bg: 'linear-gradient(135deg, #1e3a6e, #2563eb)', emoji: '📘' },
-                  { cls: 'hp-book-2', bg: 'linear-gradient(135deg, #134e3a, #16a34a)', emoji: '📗' },
-                  { cls: 'hp-book-3', bg: 'linear-gradient(135deg, #4c1d95, #7c3aed)', emoji: '📙' },
-                  { cls: 'hp-book-4', bg: 'linear-gradient(135deg, #7f1d1d, #dc2626)', emoji: '📕' },
-                  { cls: 'hp-book-5', bg: 'linear-gradient(135deg, #1e3a5f, #0ea5e9)', emoji: '📒' },
+                  { cls: 'hp-book-1', bg: 'linear-gradient(135deg, #1e3a6e, #2563eb)', icon: 'fa-book' },
+                  { cls: 'hp-book-2', bg: 'linear-gradient(135deg, #134e3a, #16a34a)', icon: 'fa-book-open' },
+                  { cls: 'hp-book-3', bg: 'linear-gradient(135deg, #4c1d95, #7c3aed)', icon: 'fa-bookmark' },
+                  { cls: 'hp-book-4', bg: 'linear-gradient(135deg, #7f1d1d, #dc2626)', icon: 'fa-book-atlas' },
+                  { cls: 'hp-book-5', bg: 'linear-gradient(135deg, #1e3a5f, #0ea5e9)', icon: 'fa-graduation-cap' },
                 ].map((b, i) => (
                   <div key={i} className={`hp-book-float ${b.cls}`}>
-                    <div
-                      className="hp-book-cover"
-                      style={{ background: b.bg }}
-                    >
-                      <span style={{ fontSize: '3rem', marginBottom: 8 }}>{b.emoji}</span>
+                    <div className="hp-book-cover" style={{ background: b.bg }}>
+                      <i className={`fa-solid ${b.icon}`}></i>
                     </div>
                   </div>
                 ))}
 
-                {/* Floating badges */}
                 <div className="hp-float-badge hp-badge-1">
-                  <div className="hp-badge-icon" style={{ background: 'rgba(34,197,94,0.15)' }}>✅</div>
+                  <div className="hp-badge-icon" style={{ background: 'rgba(34,197,94,0.15)' }}>
+                    <i className="fa-solid fa-circle-check" style={{ color: '#22c55e' }}></i>
+                  </div>
                   <div>
                     <div>Buku Selesai</div>
                     <div className="hp-badge-label">+3 minggu ini</div>
@@ -967,7 +884,9 @@ export default async function HomePage() {
                 </div>
 
                 <div className="hp-float-badge hp-badge-2">
-                  <div className="hp-badge-icon" style={{ background: 'rgba(251,191,36,0.15)' }}>🔥</div>
+                  <div className="hp-badge-icon" style={{ background: 'rgba(251,191,36,0.15)' }}>
+                    <i className="fa-solid fa-fire" style={{ color: '#f59e0b' }}></i>
+                  </div>
                   <div>
                     <div>7 Hari Streak</div>
                     <div className="hp-badge-label">Pertahankan!</div>
@@ -975,7 +894,9 @@ export default async function HomePage() {
                 </div>
 
                 <div className="hp-float-badge hp-badge-3">
-                  <div className="hp-badge-icon" style={{ background: 'rgba(91,141,239,0.15)' }}>📊</div>
+                  <div className="hp-badge-icon" style={{ background: 'rgba(91,141,239,0.15)' }}>
+                    <i className="fa-solid fa-chart-simple" style={{ color: '#5b8def' }}></i>
+                  </div>
                   <div>
                     <div>142 Halaman</div>
                     <div className="hp-badge-label">dibaca hari ini</div>
@@ -990,62 +911,75 @@ export default async function HomePage() {
         <div className="hp-marquee-strip">
           <div className="hp-marquee-track">
             {Array(2).fill([
-              '📚 Koleksi Lengkap', '📊 Lacak Progres', '🔔 Notifikasi Buku Baru',
-              '🔒 Akses Aman', '📱 Responsif di Semua Perangkat', '🎯 Selesaikan Lebih Banyak Buku',
-              '⚡ PDF Viewer Cepat', '📥 Export Laporan CSV', '🏆 Streak Membaca Harian',
-              '🔍 Cari & Filter Mudah', '👥 Manajemen Tim', '🌐 Akses 24/7',
-            ].map((item, i) => (
+              { icon: 'fa-books', text: 'Koleksi Lengkap' },
+              { icon: 'fa-chart-line', text: 'Lacak Progres' },
+              { icon: 'fa-bell', text: 'Notifikasi Buku Baru' },
+              { icon: 'fa-shield-halved', text: 'Akses Aman' },
+              { icon: 'fa-mobile-screen', text: 'Responsif di Semua Perangkat' },
+              { icon: 'fa-trophy', text: 'Selesaikan Lebih Banyak Buku' },
+              { icon: 'fa-bolt', text: 'PDF Viewer Cepat' },
+              { icon: 'fa-file-export', text: 'Export Laporan CSV' },
+              { icon: 'fa-fire', text: 'Streak Membaca Harian' },
+              { icon: 'fa-magnifying-glass', text: 'Cari & Filter Mudah' },
+              { icon: 'fa-users', text: 'Manajemen Tim' },
+              { icon: 'fa-globe', text: 'Akses 24/7' },
+            ]).flat().map((item, i) => (
               <span key={i} className="hp-marquee-item">
                 {i > 0 && <span className="hp-marquee-dot" />}
-                {item}
+                <i className={`fa-solid ${item.icon}`}></i>
+                {item.text}
               </span>
-            ))).flat().map((item, i) => (
-              <span key={i}>{item}</span>
             ))}
           </div>
         </div>
 
         {/* ── FEATURES ── */}
         <section id="fitur" className="hp-section">
-          <div className="hp-section-label">Kenapa E-Library?</div>
+          <div className="hp-section-label">
+            <i className="fa-solid fa-star"></i>
+            Kenapa E-Library?
+          </div>
           <h2 className="hp-section-title">
-            Semuanya ada di satu tempat,<br />siap kapan pun kamu butuhkan
+            Semuanya ada di satu tempat,<br />
+            siap kapan pun kamu butuhkan
           </h2>
           <p className="hp-section-desc">
-            Dirancang khusus untuk mendukung pertumbuhan profesional karyawan, 
+            Dirancang khusus untuk mendukung pertumbuhan profesional karyawan,
             bukan sekadar tempat menyimpan file PDF.
           </p>
 
           <div className="hp-features-grid">
             {[
               {
-                num: '01', icon: '📖', title: 'Baca Langsung di Browser',
+                num: '01', icon: 'fa-file-pdf', title: 'Baca Langsung di Browser',
                 desc: 'PDF viewer built-in yang mulus dan responsif. Tidak perlu download, tidak perlu aplikasi tambahan. Buka dan langsung baca.',
               },
               {
-                num: '02', icon: '🔖', title: 'Simpan Posisi Otomatis',
+                num: '02', icon: 'fa-bookmark', title: 'Simpan Posisi Otomatis',
                 desc: 'Tinggalkan di halaman berapa pun, sistem akan mengingat. Lanjutkan kapan saja dari perangkat apa pun tanpa kehilangan halaman.',
               },
               {
-                num: '03', icon: '📊', title: 'Dashboard Statistik Personal',
+                num: '03', icon: 'fa-chart-column', title: 'Dashboard Statistik Personal',
                 desc: 'Lihat berapa buku yang sudah kamu baca, berapa halaman, streak membaca harian, dan grafik aktivitas mingguan.',
               },
               {
-                num: '04', icon: '🔔', title: 'Notifikasi Real-time',
+                num: '04', icon: 'fa-bell', title: 'Notifikasi Real-time',
                 desc: 'Dapat notifikasi langsung saat ada buku baru atau pengumuman penting dari admin. Badge lonceng yang selalu update.',
               },
               {
-                num: '05', icon: '🔒', title: 'Kontrol Akses Granular',
+                num: '05', icon: 'fa-lock', title: 'Kontrol Akses Granular',
                 desc: 'Admin bisa mengatur buku mana yang publik dan mana yang restricted per departemen atau per karyawan tertentu.',
               },
               {
-                num: '06', icon: '📥', title: 'Laporan & Analitik',
+                num: '06', icon: 'fa-file-csv', title: 'Laporan & Analitik',
                 desc: 'Admin mendapat dashboard lengkap aktivitas seluruh karyawan, buku terpopuler, dan bisa export CSV kapan saja.',
               },
             ].map((f) => (
               <div key={f.num} className="hp-feature">
                 <div className="hp-feature-num">— {f.num}</div>
-                <div className="hp-feature-icon">{f.icon}</div>
+                <div className="hp-feature-icon">
+                  <i className={`fa-solid ${f.icon}`}></i>
+                </div>
                 <div className="hp-feature-title">{f.title}</div>
                 <div className="hp-feature-desc">{f.desc}</div>
               </div>
@@ -1059,14 +993,17 @@ export default async function HomePage() {
             <div className="hp-books-inner">
               <div className="hp-books-header">
                 <div>
-                  <div className="hp-section-label">Koleksi Terbaru</div>
+                  <div className="hp-section-label">
+                    <i className="fa-solid fa-clock-rotate-left"></i>
+                    Koleksi Terbaru
+                  </div>
                   <h2 className="hp-section-title" style={{ marginBottom: 0 }}>
                     Baru ditambahkan<br />
                     <em style={{ fontStyle: 'italic', color: 'var(--hp-accent)' }}>ke perpustakaan</em>
                   </h2>
                 </div>
                 <a href="/books" className="hp-see-all">
-                  Lihat semua koleksi <span>→</span>
+                  Lihat semua koleksi <i className="fa-solid fa-arrow-right"></i>
                 </a>
               </div>
 
@@ -1082,7 +1019,7 @@ export default async function HomePage() {
                     'linear-gradient(135deg, #0c1a2e 0%, #1d4ed8 100%)',
                     'linear-gradient(135deg, #1a0533 0%, #9333ea 100%)',
                   ]
-                  const emojis = ['📘', '📗', '📙', '📕', '📒', '📓', '📔', '📖']
+                  const bookIcons = ['fa-book', 'fa-book-open', 'fa-bookmark', 'fa-book-atlas', 'fa-graduation-cap', 'fa-book-journal-whills', 'fa-book-bible', 'fa-book-skull']
                   return (
                     <a key={book.id} href={`/books/${book.id}`} className="hp-book-card">
                       <div className="hp-book-card-cover">
@@ -1097,7 +1034,7 @@ export default async function HomePage() {
                             className="hp-book-card-placeholder"
                             style={{ background: gradients[idx % gradients.length] }}
                           >
-                            <span>{emojis[idx % emojis.length]}</span>
+                            <i className={`fa-solid ${bookIcons[idx % bookIcons.length]}`}></i>
                           </div>
                         )}
                       </div>
@@ -1119,7 +1056,10 @@ export default async function HomePage() {
         {/* ── CATEGORIES ── */}
         {(categories ?? []).length > 0 && (
           <section className="hp-section">
-            <div className="hp-section-label">Jelajahi Topik</div>
+            <div className="hp-section-label">
+              <i className="fa-solid fa-compass"></i>
+              Jelajahi Topik
+            </div>
             <h2 className="hp-section-title">
               Temukan buku yang<br />
               <em style={{ fontStyle: 'italic' }}>relevan dengan karier kamu</em>
@@ -1127,18 +1067,31 @@ export default async function HomePage() {
 
             <div className="hp-categories-grid">
               {(categories ?? []).slice(0, 6).map((cat, i) => {
-                const c = categoryColors[i % categoryColors.length]
+                const catStyles = [
+                  { iconBg: 'rgba(59,130,246,0.12)', iconColor: '#60a5fa', border: 'rgba(59,130,246,0.15)' },
+                  { iconBg: 'rgba(16,185,129,0.12)', iconColor: '#34d399', border: 'rgba(16,185,129,0.15)' },
+                  { iconBg: 'rgba(139,92,246,0.12)', iconColor: '#a78bfa', border: 'rgba(139,92,246,0.15)' },
+                  { iconBg: 'rgba(245,158,11,0.12)', iconColor: '#fbbf24', border: 'rgba(245,158,11,0.15)' },
+                  { iconBg: 'rgba(239,68,68,0.12)', iconColor: '#f87171', border: 'rgba(239,68,68,0.15)' },
+                  { iconBg: 'rgba(20,184,166,0.12)', iconColor: '#2dd4bf', border: 'rgba(20,184,166,0.15)' },
+                ]
+                const c = catStyles[i % catStyles.length]
                 return (
                   <a
                     key={cat.id}
                     href={`/books?category=${cat.id}`}
                     className="hp-cat-card"
-                    style={{ background: c.bg, borderColor: c.border }}
+                    style={{ borderColor: c.border }}
                   >
-                    <div className="hp-cat-icon">{c.icon}</div>
+                    <div className="hp-cat-icon" style={{ background: c.iconBg }}>
+                      <i className={`fa-solid ${categoryIcons[i % categoryIcons.length]}`} style={{ color: c.iconColor }}></i>
+                    </div>
                     <div>
                       <div className="hp-cat-name">{cat.name}</div>
-                      <div className="hp-cat-sub">Jelajahi koleksi →</div>
+                      <div className="hp-cat-sub">
+                        Jelajahi koleksi
+                        <i className="fa-solid fa-arrow-right" style={{ fontSize: '9px', opacity: 0.5 }}></i>
+                      </div>
                     </div>
                   </a>
                 )
@@ -1151,7 +1104,8 @@ export default async function HomePage() {
         <div className="hp-steps-wrap" id="cara-kerja">
           <div className="hp-steps-inner">
             <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-              <div className="hp-section-label" style={{ color: '#93b4f8' }}>
+              <div className="hp-section-label" style={{ color: '#93b4f8', justifyContent: 'center' }}>
+                <i className="fa-solid fa-circle-play"></i>
                 Cara Kerja
               </div>
               <h2 className="hp-section-title" style={{ color: '#ece8ff', margin: '0 auto' }}>
@@ -1164,13 +1118,15 @@ export default async function HomePage() {
 
             <div className="hp-steps-grid">
               {[
-                { num: '1', title: 'Buat Akun', desc: 'Daftar dengan email perusahaan. Verifikasi lewat email, lalu akun langsung aktif.' },
-                { num: '2', title: 'Jelajahi Katalog', desc: 'Cari buku berdasarkan judul, penulis, atau kategori. Filter sesuai topik yang dibutuhkan.' },
-                { num: '3', title: 'Mulai Membaca', desc: 'Buka buku langsung di browser. Progress tersimpan otomatis sehingga bisa lanjut kapan saja.' },
-                { num: '4', title: 'Lacak Kemajuan', desc: 'Pantau statistik membaca, streak harian, dan buku yang sudah selesai di dashboard pribadimu.' },
+                { icon: 'fa-user-plus', title: 'Buat Akun', desc: 'Daftar dengan email perusahaan. Verifikasi lewat email, lalu akun langsung aktif.' },
+                { icon: 'fa-magnifying-glass', title: 'Jelajahi Katalog', desc: 'Cari buku berdasarkan judul, penulis, atau kategori. Filter sesuai topik yang dibutuhkan.' },
+                { icon: 'fa-book-open-reader', title: 'Mulai Membaca', desc: 'Buka buku langsung di browser. Progress tersimpan otomatis sehingga bisa lanjut kapan saja.' },
+                { icon: 'fa-chart-pie', title: 'Lacak Kemajuan', desc: 'Pantau statistik membaca, streak harian, dan buku yang sudah selesai di dashboard pribadimu.' },
               ].map((s) => (
-                <div key={s.num} className="hp-step">
-                  <div className="hp-step-num">{s.num}</div>
+                <div key={s.title} className="hp-step">
+                  <div className="hp-step-num">
+                    <i className={`fa-solid ${s.icon}`}></i>
+                  </div>
                   <div className="hp-step-title">{s.title}</div>
                   <div className="hp-step-desc">{s.desc}</div>
                 </div>
@@ -1182,9 +1138,9 @@ export default async function HomePage() {
         {/* ── QUOTE ── */}
         <div className="hp-quote-wrap">
           <div className="hp-quote-inner">
-            <span className="hp-quote-mark">"</span>
+            <i className="fa-solid fa-quote-left hp-quote-icon"></i>
             <p className="hp-quote-text">
-              Investasi terbaik yang bisa kamu buat adalah investasi pada dirimu sendiri. 
+              Investasi terbaik yang bisa kamu buat adalah investasi pada dirimu sendiri.
               Semakin banyak yang kamu pelajari, semakin banyak yang bisa kamu raih.
             </p>
             <div className="hp-quote-author">
@@ -1203,7 +1159,7 @@ export default async function HomePage() {
           <div className="hp-cta-inner">
             <h2 className="hp-cta-title">
               {session
-                ? `Selamat datang kembali,\n${session.user.name?.split(' ')[0]}!`
+                ? `Selamat datang kembali!`
                 : 'Siap memulai perjalanan\nbelajarmu hari ini?'}
             </h2>
             <p className="hp-cta-desc">
@@ -1216,18 +1172,22 @@ export default async function HomePage() {
               {session ? (
                 <>
                   <a href={dashboardHref!} className="hp-cta-big" style={{ fontSize: '1rem', padding: '15px 32px' }}>
-                    Buka Dashboard →
+                    <i className="fa-solid fa-gauge-high"></i>
+                    Buka Dashboard
                   </a>
                   <a href="/books" className="hp-cta-outline" style={{ fontSize: '1rem', padding: '15px 24px' }}>
+                    <i className="fa-solid fa-layer-group"></i>
                     Jelajahi Katalog
                   </a>
                 </>
               ) : (
                 <>
                   <a href="/auth/register" className="hp-cta-big" style={{ fontSize: '1rem', padding: '15px 32px' }}>
-                    ✨ Daftar Gratis Sekarang
+                    <i className="fa-solid fa-user-plus"></i>
+                    Daftar Gratis Sekarang
                   </a>
                   <a href="/books" className="hp-cta-outline" style={{ fontSize: '1rem', padding: '15px 24px' }}>
+                    <i className="fa-solid fa-eye"></i>
                     Lihat Koleksi Dulu
                   </a>
                 </>
@@ -1239,18 +1199,29 @@ export default async function HomePage() {
         {/* ── FOOTER ── */}
         <footer className="hp-footer">
           <a href="/home" className="hp-footer-logo">
-            <span style={{ fontSize: '1.125rem' }}>📚</span>
+            <div className="hp-footer-logo-mark">
+              <i className="fa-solid fa-book-open"></i>
+            </div>
             <span className="hp-footer-text">E-Library Perusahaan</span>
           </a>
 
           <div className="hp-footer-links">
-            <a href="/books" className="hp-footer-link">Katalog</a>
-            <a href="/auth/register" className="hp-footer-link">Daftar</a>
-            <a href="/auth/login" className="hp-footer-link">Login</a>
+            <a href="/books" className="hp-footer-link">
+              <i className="fa-solid fa-layer-group"></i>
+              Katalog
+            </a>
+            <a href="/auth/register" className="hp-footer-link">
+              <i className="fa-solid fa-user-plus"></i>
+              Daftar
+            </a>
+            <a href="/auth/login" className="hp-footer-link">
+              <i className="fa-solid fa-right-to-bracket"></i>
+              Login
+            </a>
           </div>
 
           <span className="hp-footer-copy">
-            © {new Date().getFullYear()} E-Library Perusahaan. Confidential.
+            &copy; {new Date().getFullYear()} E-Library Perusahaan. Confidential.
           </span>
         </footer>
       </div>

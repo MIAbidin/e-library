@@ -30,10 +30,12 @@ export default function AdminUsersPage() {
   const [editUser, setEditUser] = useState<User | null>(null)
   const [detailUser, setDetailUser] = useState<User | null>(null)
   const [toggleUser, setToggleUser] = useState<User | null>(null)
+  const [deleteUser, setDeleteUser] = useState<User | null>(null)
   const [toggling, setToggling] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [resettingPassword, setResettingPassword] = useState<string | null>(null)
+  const [resetSuccessUser, setResetSuccessUser] = useState<string | null>(null)
 
-  // Ambil daftar departemen unik dari users
   const [departments, setDepartments] = useState<string[]>([])
 
   const fetchUsers = useCallback(async () => {
@@ -53,7 +55,6 @@ export default function AdminUsersPage() {
       setTotal(data.total ?? 0)
       setTotalPages(data.totalPages ?? 1)
 
-      // Kumpulkan departemen unik
       const depts = [...new Set(
         (data.users ?? [])
           .map((u: User) => u.department)
@@ -69,7 +70,6 @@ export default function AdminUsersPage() {
 
   useEffect(() => { fetchUsers() }, [fetchUsers])
 
-  // Debounce search
   useEffect(() => {
     const t = setTimeout(() => { setPage(1); fetchUsers() }, 400)
     return () => clearTimeout(t)
@@ -106,21 +106,47 @@ export default function AdminUsersPage() {
     }
   }
 
-  const handleResetPassword = async (userId: string, userName: string) => {
-    setResettingPassword(userId)
+  const handleDeleteUser = async () => {
+    if (!deleteUser) return
+    setDeleting(true)
     try {
-      const res = await fetch(`/api/admin/users/${userId}/reset-password`, {
-        method: 'POST',
+      const res = await fetch(`/api/admin/users/${deleteUser.id}`, {
+        method: 'DELETE',
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
 
+      toast.success(`Akun ${deleteUser.name} berhasil dihapus`)
+      setDeleteUser(null)
+      fetchUsers()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Gagal menghapus user')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const handleResetPassword = async (userId: string, userName: string) => {
+    setResettingPassword(userId)
+    setResetSuccessUser(null)
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminTrigger: true }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+
+      setResetSuccessUser(userId)
       toast.success(`Email reset password dikirim ke ${userName}`)
 
-      // Development: tampilkan URL di console
       if (data.resetUrl) {
         console.info('Reset URL (dev only):', data.resetUrl)
       }
+
+      // Clear success state after 3s
+      setTimeout(() => setResetSuccessUser(null), 3000)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Gagal mengirim reset password')
     } finally {
@@ -177,7 +203,6 @@ export default function AdminUsersPage() {
 
       {/* Filter Bar */}
       <div className="bg-white rounded-xl border border-gray-200 p-3 lg:p-4 mb-4 space-y-3">
-        {/* Row 1: Search */}
         <div className="relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
           <input
@@ -189,7 +214,6 @@ export default function AdminUsersPage() {
           />
         </div>
 
-        {/* Row 2: Filters */}
         <div className="flex flex-wrap gap-2">
           <select
             value={filterRole}
@@ -237,7 +261,7 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
-      {/* Table + Card Container */}
+      {/* Table Container */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         {loading ? (
           <div className="flex justify-center py-16">
@@ -257,22 +281,22 @@ export default function AdminUsersPage() {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       Pengguna
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       Role
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                       Departemen
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                       Login Terakhir
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
                       Aksi
                     </th>
                   </tr>
@@ -280,8 +304,7 @@ export default function AdminUsersPage() {
                 <tbody className="divide-y divide-gray-100">
                   {users.map((user) => (
                     <tr key={user.id} className="hover:bg-gray-50 transition">
-                      {/* Avatar + nama */}
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center
                             justify-center text-sm font-semibold text-blue-700 flex-shrink-0">
@@ -294,38 +317,32 @@ export default function AdminUsersPage() {
                         </div>
                       </td>
 
-                      {/* Role */}
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-4">
                         <Badge variant={user.role === 'admin' ? 'blue' : 'gray'}>
                           {user.role === 'admin' ? '👑 Admin' : '👤 Karyawan'}
                         </Badge>
                       </td>
 
-                      {/* Departemen */}
-                      <td className="px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">
+                      <td className="px-5 py-4 text-sm text-gray-500 hidden lg:table-cell">
                         {user.department ?? <span className="text-gray-300">—</span>}
                       </td>
 
-                      {/* Status */}
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-4">
                         <Badge variant={user.is_active ? 'green' : 'red'}>
                           {user.is_active ? '● Aktif' : '○ Nonaktif'}
                         </Badge>
                       </td>
 
-                      {/* Login terakhir */}
-                      <td className="px-6 py-4 text-sm text-gray-400 hidden lg:table-cell">
+                      <td className="px-5 py-4 text-sm text-gray-400 hidden lg:table-cell">
                         {formatRelativeTime(user.last_login_at)}
                       </td>
 
-                      {/* Aksi */}
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-4">
                         <div className="flex items-center gap-1.5 justify-end flex-wrap">
                           <button
                             onClick={() => setDetailUser(user)}
                             className="px-2.5 py-1.5 text-xs text-gray-600 border border-gray-200
                               rounded-lg hover:bg-gray-50 transition font-medium"
-                            title="Lihat detail"
                           >
                             Detail
                           </button>
@@ -339,21 +356,36 @@ export default function AdminUsersPage() {
                           <button
                             onClick={() => handleResetPassword(user.id, user.name)}
                             disabled={resettingPassword === user.id}
-                            className="px-2.5 py-1.5 text-xs text-yellow-600 border border-yellow-200
-                              rounded-lg hover:bg-yellow-50 transition font-medium disabled:opacity-50"
-                            title="Reset password"
+                            className={`px-2.5 py-1.5 text-xs rounded-lg border transition font-medium disabled:opacity-50
+                              ${resetSuccessUser === user.id
+                                ? 'text-green-600 border-green-200 bg-green-50'
+                                : 'text-yellow-600 border-yellow-200 hover:bg-yellow-50'
+                              }`}
+                            title="Kirim email reset password"
                           >
-                            {resettingPassword === user.id ? '...' : '🔑'}
+                            {resettingPassword === user.id
+                              ? <LoadingSpinner size="sm" />
+                              : resetSuccessUser === user.id
+                              ? '✓ Terkirim'
+                              : '🔑 Reset'}
                           </button>
                           <button
                             onClick={() => setToggleUser(user)}
                             className={`px-2.5 py-1.5 text-xs rounded-lg border transition font-medium
                               ${user.is_active
-                                ? 'text-red-600 border-red-200 hover:bg-red-50'
+                                ? 'text-orange-600 border-orange-200 hover:bg-orange-50'
                                 : 'text-green-600 border-green-200 hover:bg-green-50'
                               }`}
                           >
                             {user.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                          </button>
+                          <button
+                            onClick={() => setDeleteUser(user)}
+                            className="px-2.5 py-1.5 text-xs text-red-600 border border-red-200
+                              rounded-lg hover:bg-red-50 transition font-medium"
+                            title="Hapus user permanen"
+                          >
+                            🗑️
                           </button>
                         </div>
                       </td>
@@ -367,7 +399,6 @@ export default function AdminUsersPage() {
             <div className="md:hidden divide-y divide-gray-100">
               {users.map((user) => (
                 <div key={user.id} className="p-4">
-                  {/* Header card */}
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center
                       justify-center text-sm font-bold text-blue-700 flex-shrink-0">
@@ -389,16 +420,10 @@ export default function AdminUsersPage() {
                           <span className="text-xs text-gray-400">{user.department}</span>
                         )}
                       </div>
-                      {user.last_login_at && (
-                        <p className="text-xs text-gray-300 mt-1">
-                          Login: {formatRelativeTime(user.last_login_at)}
-                        </p>
-                      )}
                     </div>
                   </div>
 
-                  {/* Action buttons */}
-                  <div className="grid grid-cols-4 gap-1.5 mt-3">
+                  <div className="grid grid-cols-5 gap-1.5 mt-3">
                     <button
                       onClick={() => setDetailUser(user)}
                       className="py-2 text-xs text-gray-600 border border-gray-200
@@ -416,20 +441,30 @@ export default function AdminUsersPage() {
                     <button
                       onClick={() => handleResetPassword(user.id, user.name)}
                       disabled={resettingPassword === user.id}
-                      className="py-2 text-xs text-yellow-600 border border-yellow-200
-                        rounded-lg hover:bg-yellow-50 transition font-medium disabled:opacity-50"
+                      className={`py-2 text-xs rounded-lg border transition font-medium disabled:opacity-50
+                        ${resetSuccessUser === user.id
+                          ? 'text-green-600 border-green-200 bg-green-50'
+                          : 'text-yellow-600 border-yellow-200 hover:bg-yellow-50'
+                        }`}
                     >
-                      {resettingPassword === user.id ? '...' : '🔑 Reset'}
+                      {resettingPassword === user.id ? '...' : resetSuccessUser === user.id ? '✓' : '🔑'}
                     </button>
                     <button
                       onClick={() => setToggleUser(user)}
                       className={`py-2 text-xs rounded-lg border transition font-medium
                         ${user.is_active
-                          ? 'text-red-600 border-red-200 hover:bg-red-50'
+                          ? 'text-orange-600 border-orange-200 hover:bg-orange-50'
                           : 'text-green-600 border-green-200 hover:bg-green-50'
                         }`}
                     >
-                      {user.is_active ? 'Nonaktif' : 'Aktifkan'}
+                      {user.is_active ? 'Off' : 'On'}
+                    </button>
+                    <button
+                      onClick={() => setDeleteUser(user)}
+                      className="py-2 text-xs text-red-600 border border-red-200
+                        rounded-lg hover:bg-red-50 transition font-medium"
+                    >
+                      🗑️
                     </button>
                   </div>
                 </div>
@@ -519,6 +554,18 @@ export default function AdminUsersPage() {
         }
         confirmLabel={toggleUser?.is_active ? 'Ya, Nonaktifkan' : 'Ya, Aktifkan'}
         danger={toggleUser?.is_active}
+      />
+
+      {/* Konfirmasi Hapus User */}
+      <ConfirmDialog
+        isOpen={!!deleteUser}
+        onClose={() => setDeleteUser(null)}
+        onConfirm={handleDeleteUser}
+        loading={deleting}
+        title="Hapus Pengguna"
+        message={`Yakin ingin menghapus akun "${deleteUser?.name}" (${deleteUser?.email}) secara permanen? Semua data riwayat baca dan statistik akan ikut terhapus. Tindakan ini tidak dapat dibatalkan.`}
+        confirmLabel="Ya, Hapus Permanen"
+        danger
       />
     </div>
   )

@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth/options'
 import { createAdminClient } from '@/lib/supabase/server'
+import { sendEmail } from '@/lib/email/sender'
+import { resetPasswordEmailTemplate } from '@/lib/email/templates/reset-password'
 import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
+
+// POST — ada 2 mode:
+// 1. Admin trigger reset (body: { adminTrigger: true }) → kirim email reset ke user
+// 2. User konfirmasi reset (body: { token, password }) → set password baru
 
 export async function POST(
   request: NextRequest,
@@ -8,7 +17,56 @@ export async function POST(
 ) {
   try {
     const { id: userId } = await context.params
-    const { token, password } = await request.json()
+    const body = await request.json()
+
+    // ── MODE 1: Admin trigger reset password ──
+    if (body.adminTrigger === true) {
+      const session = await getServerSession(authOptions)
+      if (!session || session.user.role !== 'admin') {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+
+      const supabase = createAdminClient()
+
+      const { data: user } = await supabase
+        .from('users')
+        .select('id, name, email')
+        .eq('id', userId)
+        .single()
+
+      if (!user) {
+        return NextResponse.json({ error: 'User tidak ditemukan' }, { status: 404 })
+      }
+
+      const resetToken = crypto.randomBytes(32).toString('hex')
+      const tokenExpires = new Date(Date.now() + 60 * 60 * 1000) // 1 jam
+
+      await supabase
+        .from('users')
+        .update({
+          reset_token: resetToken,
+          reset_token_expires: tokenExpires.toISOString(),
+        })
+        .eq('id', userId)
+
+      const resetUrl = `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${resetToken}&userId=${userId}`
+
+      const emailResult = await sendEmail({
+        to: user.email,
+        subject: 'Reset Password E-Library Perusahaan',
+        html: resetPasswordEmailTemplate({ name: user.name, resetUrl }),
+      })
+
+      return NextResponse.json({
+        success: true,
+        emailSent: emailResult.success,
+        // Hanya tampil di development
+        resetUrl: process.env.NODE_ENV === 'development' ? resetUrl : undefined,
+      })
+    }
+
+    // ── MODE 2: User konfirmasi reset password ──
+    const { token, password } = body
 
     if (!token || !password) {
       return NextResponse.json({ error: 'Data tidak lengkap' }, { status: 400 })
@@ -19,7 +77,6 @@ export async function POST(
 
     const supabase = createAdminClient()
 
-    // Ambil user berdasarkan id dan reset_token
     const { data: user } = await supabase
       .from('users')
       .select('id, reset_token, reset_token_expires')

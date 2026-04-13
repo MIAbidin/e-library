@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Modal } from '@/components/ui/Modal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { toast } from '@/components/ui/Toast'
 import { formatDate } from '@/lib/utils'
@@ -31,6 +32,8 @@ export default function AdminNotificationsPage() {
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const [deleteNotif, setDeleteNotif] = useState<NotifRecord | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   // Form state
   const [title, setTitle] = useState('')
@@ -43,9 +46,7 @@ export default function AdminNotificationsPage() {
   const fetchNotifications = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch(
-        `/api/admin/notifications?page=${page}&limit=10`
-      )
+      const res = await fetch(`/api/admin/notifications?page=${page}&limit=10`)
       const data = await res.json()
       setNotifications(data.notifications ?? [])
       setTotal(data.total ?? 0)
@@ -57,11 +58,8 @@ export default function AdminNotificationsPage() {
     }
   }, [page])
 
-  useEffect(() => {
-    fetchNotifications()
-  }, [fetchNotifications])
+  useEffect(() => { fetchNotifications() }, [fetchNotifications])
 
-  // Fetch departemen untuk dropdown
   useEffect(() => {
     fetch('/api/admin/users?limit=100')
       .then((r) => r.json())
@@ -99,9 +97,7 @@ export default function AdminNotificationsPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
 
-      toast.success(
-        `Pengumuman terkirim ke ${data.sentTo} pengguna`
-      )
+      toast.success(`Pengumuman terkirim ke ${data.sentTo} pengguna`)
       setShowForm(false)
       setTitle('')
       setBody('')
@@ -109,11 +105,29 @@ export default function AdminNotificationsPage() {
       setPreview(false)
       fetchNotifications()
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : 'Gagal mengirim pengumuman'
-      )
+      toast.error(error instanceof Error ? error.message : 'Gagal mengirim pengumuman')
     } finally {
       setSending(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!deleteNotif) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/admin/notifications/${deleteNotif.id}`, {
+        method: 'DELETE',
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+
+      toast.success('Notifikasi berhasil dihapus')
+      setDeleteNotif(null)
+      fetchNotifications()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Gagal menghapus notifikasi')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -153,9 +167,7 @@ export default function AdminNotificationsPage() {
         ) : notifications.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-4xl mb-3">📢</p>
-            <p className="text-gray-500 text-sm">
-              Belum ada notifikasi dikirim
-            </p>
+            <p className="text-gray-500 text-sm">Belum ada notifikasi dikirim</p>
           </div>
         ) : (
           <>
@@ -164,14 +176,11 @@ export default function AdminNotificationsPage() {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    {[
-                      'Notifikasi', 'Tipe', 'Penerima',
-                      'Dikirim oleh', 'Tanggal',
-                    ].map((h) => (
+                    {['Notifikasi', 'Tipe', 'Penerima', 'Dikirim oleh', 'Tanggal', ''].map((h) => (
                       <th
                         key={h}
                         className="px-6 py-3 text-left text-xs font-semibold
-                          text-gray-500 uppercase tracking-wider"
+                          text-gray-500 uppercase tracking-wider last:text-right"
                       >
                         {h}
                       </th>
@@ -180,21 +189,13 @@ export default function AdminNotificationsPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {notifications.map((notif) => (
-                    <tr
-                      key={notif.id}
-                      className="hover:bg-gray-50 transition"
-                    >
+                    <tr key={notif.id} className="hover:bg-gray-50 transition">
                       <td className="px-6 py-4">
-                        <p className="text-sm font-medium text-gray-900">
-                          {notif.title}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">
-                          {notif.body}
-                        </p>
+                        <p className="text-sm font-medium text-gray-900">{notif.title}</p>
+                        <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{notif.body}</p>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-xs bg-gray-100 text-gray-600
-                          px-2 py-1 rounded-full">
+                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
                           {typeLabel[notif.type] ?? notif.type}
                         </span>
                       </td>
@@ -205,11 +206,17 @@ export default function AdminNotificationsPage() {
                         {(notif.creator as { name: string } | null)?.name ?? 'System'}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-400">
-                        {formatDate(notif.created_at, {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                        })}
+                        {formatDate(notif.created_at, { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={() => setDeleteNotif(notif)}
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50
+                            rounded-lg transition"
+                          title="Hapus notifikasi"
+                        >
+                          🗑️
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -222,26 +229,24 @@ export default function AdminNotificationsPage() {
               {notifications.map((notif) => (
                 <div key={notif.id} className="p-4">
                   <div className="flex items-start justify-between gap-2 mb-1">
-                    <p className="text-sm font-semibold text-gray-900 flex-1">
-                      {notif.title}
-                    </p>
-                    <span className="text-xs bg-gray-100 text-gray-500
-                      px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0">
-                      {typeLabel[notif.type] ?? notif.type}
-                    </span>
+                    <p className="text-sm font-semibold text-gray-900 flex-1">{notif.title}</p>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+                        {typeLabel[notif.type] ?? notif.type}
+                      </span>
+                      <button
+                        onClick={() => setDeleteNotif(notif)}
+                        className="p-1 text-gray-400 hover:text-red-600 rounded transition"
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   </div>
-                  <p className="text-xs text-gray-400 line-clamp-2 mb-2">
-                    {notif.body}
-                  </p>
+                  <p className="text-xs text-gray-400 line-clamp-2 mb-2">{notif.body}</p>
                   <div className="flex items-center gap-3 text-xs text-gray-400">
                     <span>👥 {notif.recipientCount} penerima</span>
                     <span>·</span>
-                    <span>
-                      {formatDate(notif.created_at, {
-                        day: 'numeric',
-                        month: 'short',
-                      })}
-                    </span>
+                    <span>{formatDate(notif.created_at, { day: 'numeric', month: 'short' })}</span>
                   </div>
                 </div>
               ))}
@@ -249,25 +254,22 @@ export default function AdminNotificationsPage() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="px-6 py-4 border-t border-gray-100
-                flex items-center justify-between">
-                <p className="text-sm text-gray-500">
-                  {page} / {totalPages}
-                </p>
+              <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+                <p className="text-sm text-gray-500">{page} / {totalPages}</p>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setPage((p) => p - 1)}
                     disabled={page === 1}
-                    className="px-3 py-1.5 text-sm border border-gray-200
-                      rounded-lg hover:bg-gray-50 disabled:opacity-40 transition"
+                    className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg
+                      hover:bg-gray-50 disabled:opacity-40 transition"
                   >
                     ← Prev
                   </button>
                   <button
                     onClick={() => setPage((p) => p + 1)}
                     disabled={page === totalPages}
-                    className="px-3 py-1.5 text-sm border border-gray-200
-                      rounded-lg hover:bg-gray-50 disabled:opacity-40 transition"
+                    className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg
+                      hover:bg-gray-50 disabled:opacity-40 transition"
                   >
                     Next →
                   </button>
@@ -279,32 +281,20 @@ export default function AdminNotificationsPage() {
       </div>
 
       {/* ===== MODAL FORM KIRIM PENGUMUMAN ===== */}
-      <Modal
-        isOpen={showForm}
-        onClose={handleCloseForm}
-        title="Buat Pengumuman"
-        size="md"
-      >
+      <Modal isOpen={showForm} onClose={handleCloseForm} title="Buat Pengumuman" size="md">
         {preview ? (
-          /* Preview mode */
           <div className="space-y-4">
-            <p className="text-xs text-gray-500 font-medium uppercase
-              tracking-wider">
+            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">
               Preview Pengumuman
             </p>
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
               <div className="flex gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-100
-                  flex items-center justify-center text-lg flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-lg flex-shrink-0">
                   📢
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">
-                    {title}
-                  </p>
-                  <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                    {body}
-                  </p>
+                  <p className="text-sm font-semibold text-gray-900">{title}</p>
+                  <p className="text-sm text-gray-600 mt-1 leading-relaxed">{body}</p>
                 </div>
               </div>
             </div>
@@ -312,9 +302,7 @@ export default function AdminNotificationsPage() {
             <div className="bg-gray-50 rounded-xl p-3">
               <p className="text-xs text-gray-500">
                 <span className="font-medium">Target:</span>{' '}
-                {targetDept
-                  ? `Departemen ${targetDept}`
-                  : 'Semua pengguna aktif'}
+                {targetDept ? `Departemen ${targetDept}` : 'Semua pengguna aktif'}
               </p>
             </div>
 
@@ -339,9 +327,7 @@ export default function AdminNotificationsPage() {
             </div>
           </div>
         ) : (
-          /* Form mode */
           <div className="space-y-4">
-            {/* Judul */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 Judul Pengumuman <span className="text-red-500">*</span>
@@ -354,12 +340,9 @@ export default function AdminNotificationsPage() {
                 className="w-full px-3 py-2.5 text-sm border border-gray-200
                   rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <p className="text-xs text-gray-400 mt-1 text-right">
-                {title.length}/100
-              </p>
+              <p className="text-xs text-gray-400 mt-1 text-right">{title.length}/100</p>
             </div>
 
-            {/* Isi */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 Isi Pengumuman <span className="text-red-500">*</span>
@@ -371,15 +354,11 @@ export default function AdminNotificationsPage() {
                 rows={4}
                 maxLength={500}
                 className="w-full px-3 py-2.5 text-sm border border-gray-200
-                  rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500
-                  resize-none"
+                  rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               />
-              <p className="text-xs text-gray-400 mt-1 text-right">
-                {body.length}/500
-              </p>
+              <p className="text-xs text-gray-400 mt-1 text-right">{body.length}/500</p>
             </div>
 
-            {/* Target */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 Target Penerima
@@ -388,27 +367,21 @@ export default function AdminNotificationsPage() {
                 value={targetDept}
                 onChange={(e) => setTargetDept(e.target.value)}
                 className="w-full px-3 py-2.5 text-sm border border-gray-200
-                  rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500
-                  bg-white text-gray-700"
+                  rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
               >
                 <option value="">Semua Pengguna Aktif</option>
                 {departments.map((d) => (
-                  <option key={d} value={d}>
-                    Departemen: {d}
-                  </option>
+                  <option key={d} value={d}>Departemen: {d}</option>
                 ))}
               </select>
             </div>
 
-            {/* Info */}
             <div className="bg-blue-50 border border-blue-100 rounded-xl p-3">
               <p className="text-xs text-blue-700">
-                💡 Pengumuman akan muncul di notifikasi in-app semua
-                pengguna yang dipilih.
+                💡 Pengumuman akan muncul di notifikasi in-app semua pengguna yang dipilih.
               </p>
             </div>
 
-            {/* Actions */}
             <div className="flex gap-3 pt-2 border-t border-gray-100">
               <button
                 onClick={handleCloseForm}
@@ -429,6 +402,18 @@ export default function AdminNotificationsPage() {
           </div>
         )}
       </Modal>
+
+      {/* ===== CONFIRM DELETE NOTIFIKASI ===== */}
+      <ConfirmDialog
+        isOpen={!!deleteNotif}
+        onClose={() => setDeleteNotif(null)}
+        onConfirm={handleDelete}
+        loading={deleting}
+        title="Hapus Notifikasi"
+        message={`Yakin ingin menghapus notifikasi "${deleteNotif?.title}"? Notifikasi ini akan dihapus dari inbox semua penerima (${deleteNotif?.recipientCount} orang). Tindakan ini tidak dapat dibatalkan.`}
+        confirmLabel="Ya, Hapus"
+        danger
+      />
     </div>
   )
 }

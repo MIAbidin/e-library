@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/options'
 import { createAdminClient } from '@/lib/supabase/server'
+import { sendEmail } from '@/lib/email/sender'
+import { resetPasswordEmailTemplate } from '@/lib/email/templates/reset-password'
+import crypto from 'crypto'
 
 // GET — detail user + statistik aktivitas
 export async function GET(
@@ -120,5 +123,53 @@ export async function PUT(
   } catch (error) {
     console.error('PUT /api/admin/users/[id] error:', error)
     return NextResponse.json({ error: 'Gagal mengupdate user' }, { status: 500 })
+  }
+}
+
+// DELETE — hapus user permanen
+export async function DELETE(
+  _req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params
+
+    const session = await getServerSession(authOptions)
+    if (!session || session.user.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Tidak bisa hapus diri sendiri
+    if (id === session.user.id) {
+      return NextResponse.json(
+        { error: 'Tidak bisa menghapus akun sendiri' },
+        { status: 400 }
+      )
+    }
+
+    const supabase = createAdminClient()
+
+    // Hapus data terkait user dulu
+    await Promise.allSettled([
+      supabase.from('read_history').delete().eq('user_id', id),
+      supabase.from('reading_sessions').delete().eq('user_id', id),
+      supabase.from('book_completions').delete().eq('user_id', id),
+      supabase.from('daily_read_stats').delete().eq('user_id', id),
+      supabase.from('user_notifications').delete().eq('user_id', id),
+      supabase.from('notification_preferences').delete().eq('user_id', id),
+      supabase.from('book_access').delete().eq('user_id', id),
+    ])
+
+    const { error } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('DELETE /api/admin/users/[id] error:', error)
+    return NextResponse.json({ error: 'Gagal menghapus user' }, { status: 500 })
   }
 }

@@ -6,10 +6,10 @@ import { createAdminClient } from '@/lib/supabase/server'
 // DELETE /api/admin/notifications/[id]
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  context: any
 ) {
   try {
-    const { id } = params
+    const { id } = context.params
 
     const session = await getServerSession(authOptions)
     if (!session || session.user.role !== 'admin') {
@@ -18,7 +18,7 @@ export async function DELETE(
 
     const supabase = createAdminClient()
 
-    // Hapus relasi dulu (foreign key safety)
+    // Hapus relasi dulu (hindari foreign key error)
     await supabase
       .from('user_notifications')
       .delete()

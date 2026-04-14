@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useSession, signOut } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
+import { useSearchParams, useRouter } from 'next/navigation'
 
 interface Book {
   id: string
@@ -33,21 +34,31 @@ const GRADIENTS = [
   'linear-gradient(135deg, #1a0533 0%, #9333ea 100%)',
 ]
 
+const FA_ICONS = [
+  'fa-book', 'fa-book-open', 'fa-bookmark',
+  'fa-graduation-cap', 'fa-file-lines', 'fa-scroll',
+  'fa-newspaper', 'fa-feather-pointed',
+]
+
 export default function PublicBooksPage() {
   const { data: session } = useSession()
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
+  // ✅ Inisialisasi state dari URL params (termasuk category dari home page)
   const [books, setBooks] = useState<Book[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [total, setTotal] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [category, setCategory] = useState('')
-  const [sort, setSort] = useState('newest')
-  const [page, setPage] = useState(1)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [search, setSearch] = useState(() => searchParams.get('search') ?? '')
+  const [category, setCategory] = useState(() => searchParams.get('category') ?? '')
+  const [sort, setSort] = useState(() => searchParams.get('sort') ?? 'newest')
+  const [page, setPage] = useState(() => parseInt(searchParams.get('page') ?? '1'))
   const [showFilters, setShowFilters] = useState(false)
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Fetch categories once
   useEffect(() => {
     fetch('/api/public/categories')
       .then(r => r.json())
@@ -87,6 +98,16 @@ export default function PublicBooksPage() {
     searchTimer.current = setTimeout(() => setPage(1), 400)
   }
 
+  const handleCategoryChange = (val: string) => {
+    setCategory(val)
+    setPage(1)
+  }
+
+  const handleSortChange = (val: string) => {
+    setSort(val)
+    setPage(1)
+  }
+
   const handleReset = () => {
     setSearch('')
     setCategory('')
@@ -100,6 +121,9 @@ export default function PublicBooksPage() {
 
   const hasFilter = search || category || sort !== 'newest'
   const activeFilterCount = [search, category, sort !== 'newest' ? '1' : ''].filter(Boolean).length
+
+  // Find selected category name for display
+  const selectedCategoryName = categories.find(c => c.id === category)?.name
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-base)', color: 'var(--text-primary)' }}>
@@ -128,15 +152,16 @@ export default function PublicBooksPage() {
               width: 32, height: 32, borderRadius: 8,
               background: 'linear-gradient(135deg, #2563eb, #6366f1)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 16,
-            }}>📚</div>
+              color: 'white', fontSize: 14,
+            }}>
+              <i className="fa-solid fa-book-open"></i>
+            </div>
             <span style={{
               fontWeight: 700, fontSize: '0.9375rem',
               color: 'var(--text-primary)',
               fontFamily: 'var(--font-display)',
               letterSpacing: '-0.02em',
-              display: 'none',
-            }} className="nav-logo-text">E-Library</span>
+            }}>E-Library</span>
           </Link>
 
           {/* Desktop Nav Links */}
@@ -168,9 +193,8 @@ export default function PublicBooksPage() {
                 textDecoration: 'none', borderRadius: 9,
                 padding: '8px 16px', fontSize: '0.875rem', fontWeight: 600,
                 display: 'flex', alignItems: 'center', gap: 6,
-                transition: 'background 0.15s',
               }}>
-                <span>Dashboard →</span>
+                Dashboard <i className="fa-solid fa-arrow-right" style={{ fontSize: '0.75rem' }}></i>
               </Link>
             ) : (
               <>
@@ -180,21 +204,12 @@ export default function PublicBooksPage() {
                   textDecoration: 'none',
                   padding: '7px 14px', borderRadius: 8,
                   border: '1px solid var(--border-base)',
-                  display: 'none',
                 }} className="desktop-only">Masuk</Link>
                 <Link href="/auth/register" style={{
                   background: '#2563eb', color: '#fff',
                   textDecoration: 'none', borderRadius: 9,
                   padding: '8px 16px', fontSize: '0.875rem', fontWeight: 600,
-                  transition: 'background 0.15s',
                 }}>Daftar</Link>
-                <Link href="/auth/login" style={{
-                  fontSize: '0.875rem', fontWeight: 500,
-                  color: 'var(--text-secondary)',
-                  textDecoration: 'none',
-                  padding: '7px 10px', borderRadius: 8,
-                  border: '1px solid var(--border-base)',
-                }} className="mobile-only">Masuk</Link>
               </>
             )}
           </div>
@@ -202,10 +217,23 @@ export default function PublicBooksPage() {
       </nav>
 
       {/* ── PAGE HEADER ── */}
-      <div style={{
-        maxWidth: 1280, margin: '0 auto',
-        padding: '24px 16px 0',
-      }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 16px 0' }}>
+
+        {/* Breadcrumb / back to home */}
+        <div style={{ marginBottom: 12 }}>
+          <Link href="/home" style={{
+            fontSize: '0.8125rem', color: 'var(--text-tertiary)',
+            textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6,
+            transition: 'color 0.15s',
+          }}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-secondary)'}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-tertiary)'}
+          >
+            <i className="fa-solid fa-arrow-left" style={{ fontSize: '0.75rem' }}></i>
+            Beranda
+          </Link>
+        </div>
+
         <div style={{ marginBottom: 20 }}>
           <h1 style={{
             fontSize: 'clamp(1.25rem, 4vw, 1.75rem)',
@@ -214,9 +242,18 @@ export default function PublicBooksPage() {
             fontFamily: 'var(--font-display)',
             letterSpacing: '-0.02em',
             marginBottom: 4,
-          }}>Katalog Buku</h1>
+          }}>
+            {selectedCategoryName ? (
+              <>
+                <i className="fa-solid fa-tag" style={{ fontSize: '1rem', color: 'var(--brand-blue-light)', marginRight: 8 }}></i>
+                {selectedCategoryName}
+              </>
+            ) : 'Katalog Buku'}
+          </h1>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>
-            {total > 0 ? `${total} koleksi e-book tersedia` : 'Temukan e-book yang kamu cari'}
+            {total > 0
+              ? `${total} koleksi e-book${selectedCategoryName ? ` dalam kategori "${selectedCategoryName}"` : ' tersedia'}`
+              : 'Temukan e-book yang kamu cari'}
           </p>
         </div>
 
@@ -231,11 +268,11 @@ export default function PublicBooksPage() {
           {/* Search row */}
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <div style={{ position: 'relative', flex: 1 }}>
-              <span style={{
+              <i className="fa-solid fa-magnifying-glass" style={{
                 position: 'absolute', left: 11, top: '50%',
                 transform: 'translateY(-50%)',
-                fontSize: 14, opacity: 0.5,
-              }}>🔍</span>
+                fontSize: 13, color: 'var(--text-tertiary)',
+              }}></i>
               <input
                 value={search}
                 onChange={e => handleSearchChange(e.target.value)}
@@ -260,24 +297,27 @@ export default function PublicBooksPage() {
                     transform: 'translateY(-50%)',
                     background: 'none', border: 'none', cursor: 'pointer',
                     fontSize: 13, color: 'var(--text-tertiary)', padding: 2,
-                  }}>✕</button>
+                  }}>
+                  <i className="fa-solid fa-xmark"></i>
+                </button>
               )}
             </div>
 
             {/* Mobile filter toggle */}
             <button
               onClick={() => setShowFilters(!showFilters)}
+              className="mobile-filter-btn"
               style={{
                 padding: '9px 14px', borderRadius: 9,
                 border: `1px solid ${showFilters || hasFilter ? '#2563eb' : 'var(--border-base)'}`,
                 background: showFilters || hasFilter ? 'var(--badge-blue-bg)' : 'var(--input-bg)',
                 color: showFilters || hasFilter ? 'var(--brand-blue-light)' : 'var(--text-secondary)',
                 cursor: 'pointer', fontSize: '0.875rem', fontWeight: 500,
-                display: 'flex', alignItems: 'center', gap: 6,
+                display: 'none', alignItems: 'center', gap: 6,
                 flexShrink: 0,
               }}
-              className="mobile-filter-btn"
             >
+              <i className="fa-solid fa-sliders"></i>
               Filter
               {activeFilterCount > 0 && (
                 <span style={{
@@ -293,11 +333,11 @@ export default function PublicBooksPage() {
             <div style={{ display: 'flex', gap: 8 }} className="desktop-filters">
               <select
                 value={category}
-                onChange={e => { setCategory(e.target.value); setPage(1) }}
+                onChange={e => handleCategoryChange(e.target.value)}
                 style={{
                   padding: '9px 12px', borderRadius: 9, fontSize: '0.8125rem',
-                  background: 'var(--input-bg)', border: '1px solid var(--input-border)',
-                  color: 'var(--input-text)', cursor: 'pointer', minWidth: 140,
+                  background: 'var(--input-bg)', border: category ? '1px solid #2563eb' : '1px solid var(--input-border)',
+                  color: 'var(--input-text)', cursor: 'pointer', minWidth: 150,
                 }}
               >
                 <option value="">Semua Kategori</option>
@@ -307,7 +347,7 @@ export default function PublicBooksPage() {
               </select>
               <select
                 value={sort}
-                onChange={e => { setSort(e.target.value); setPage(1) }}
+                onChange={e => handleSortChange(e.target.value)}
                 style={{
                   padding: '9px 12px', borderRadius: 9, fontSize: '0.8125rem',
                   background: 'var(--input-bg)', border: '1px solid var(--input-border)',
@@ -324,8 +364,11 @@ export default function PublicBooksPage() {
                   padding: '9px 14px', borderRadius: 9, fontSize: '0.8125rem',
                   background: 'none', border: '1px solid var(--border-base)',
                   color: 'var(--text-tertiary)', cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                }}>Reset</button>
+                  whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6,
+                }}>
+                  <i className="fa-solid fa-rotate-left"></i>
+                  Reset
+                </button>
               )}
             </div>
           </div>
@@ -336,13 +379,13 @@ export default function PublicBooksPage() {
               marginTop: 10, paddingTop: 10,
               borderTop: '1px solid var(--border-subtle)',
               display: 'flex', flexDirection: 'column', gap: 8,
-            }} className="mobile-filter-panel">
+            }}>
               <select
                 value={category}
-                onChange={e => { setCategory(e.target.value); setPage(1) }}
+                onChange={e => handleCategoryChange(e.target.value)}
                 style={{
                   width: '100%', padding: '10px 12px', borderRadius: 9, fontSize: '0.875rem',
-                  background: 'var(--input-bg)', border: '1px solid var(--input-border)',
+                  background: 'var(--input-bg)', border: category ? '1px solid #2563eb' : '1px solid var(--input-border)',
                   color: 'var(--input-text)', cursor: 'pointer',
                 }}
               >
@@ -354,7 +397,7 @@ export default function PublicBooksPage() {
               <div style={{ display: 'flex', gap: 8 }}>
                 <select
                   value={sort}
-                  onChange={e => { setSort(e.target.value); setPage(1) }}
+                  onChange={e => handleSortChange(e.target.value)}
                   style={{
                     flex: 1, padding: '10px 12px', borderRadius: 9, fontSize: '0.875rem',
                     background: 'var(--input-bg)', border: '1px solid var(--input-border)',
@@ -370,10 +413,37 @@ export default function PublicBooksPage() {
                   <button onClick={handleReset} style={{
                     padding: '10px 16px', borderRadius: 9, fontSize: '0.875rem',
                     background: 'none', border: '1px solid var(--border-base)',
-                    color: 'var(--text-tertiary)', cursor: 'pointer', whiteSpace: 'nowrap',
-                  }}>Reset</button>
+                    color: 'var(--text-tertiary)', cursor: 'pointer',
+                    whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6,
+                  }}>
+                    <i className="fa-solid fa-rotate-left"></i>
+                    Reset
+                  </button>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Active category chip */}
+          {category && selectedCategoryName && (
+            <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Filter aktif:</span>
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                background: 'var(--badge-blue-bg)', color: 'var(--brand-blue-light)',
+                padding: '3px 10px', borderRadius: 100,
+                fontSize: '0.75rem', fontWeight: 600,
+              }}>
+                <i className="fa-solid fa-tag" style={{ fontSize: '0.625rem' }}></i>
+                {selectedCategoryName}
+                <button onClick={() => handleCategoryChange('')} style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: 'inherit', padding: 0, lineHeight: 1,
+                  display: 'flex', alignItems: 'center',
+                }}>
+                  <i className="fa-solid fa-xmark" style={{ fontSize: '0.625rem' }}></i>
+                </button>
+              </span>
             </div>
           )}
         </div>
@@ -386,12 +456,16 @@ export default function PublicBooksPage() {
           }}>
             <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>
               {books.length > 0 ? (
-                <>Menampilkan <strong style={{ color: 'var(--text-secondary)' }}>{books.length}</strong> dari <strong style={{ color: 'var(--text-secondary)' }}>{total}</strong> buku</>
+                <>
+                  Menampilkan <strong style={{ color: 'var(--text-secondary)' }}>{books.length}</strong> dari{' '}
+                  <strong style={{ color: 'var(--text-secondary)' }}>{total}</strong> buku
+                </>
               ) : 'Tidak ada hasil'}
             </p>
             {!session && (
               <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                <Link href="/auth/login" style={{ color: 'var(--brand-blue-light)', textDecoration: 'none', fontWeight: 600 }}>Login</Link> untuk simpan progres membaca
+                <Link href="/auth/login" style={{ color: 'var(--brand-blue-light)', textDecoration: 'none', fontWeight: 600 }}>Login</Link>
+                {' '}untuk simpan progres membaca
               </p>
             )}
           </div>
@@ -413,7 +487,7 @@ export default function PublicBooksPage() {
                 <div style={{
                   aspectRatio: '3/4',
                   background: 'var(--bg-muted)',
-                  animation: 'pulse 1.5s ease-in-out infinite',
+                  animation: 'shimmer 1.5s ease-in-out infinite',
                 }} />
                 <div style={{ padding: 10 }}>
                   <div style={{ height: 12, borderRadius: 4, background: 'var(--bg-muted)', marginBottom: 6 }} />
@@ -424,16 +498,24 @@ export default function PublicBooksPage() {
           </div>
         ) : books.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>📭</div>
+            <div style={{ fontSize: 40, marginBottom: 16, color: 'var(--text-disabled)' }}>
+              <i className="fa-solid fa-box-open"></i>
+            </div>
             <p style={{ color: 'var(--text-tertiary)', fontSize: '0.9375rem', marginBottom: 16 }}>
-              {hasFilter ? 'Tidak ada buku yang cocok dengan filter.' : 'Belum ada buku tersedia.'}
+              {hasFilter
+                ? `Tidak ada buku${selectedCategoryName ? ` dalam kategori "${selectedCategoryName}"` : ''} yang cocok.`
+                : 'Belum ada buku tersedia.'}
             </p>
             {hasFilter && (
               <button onClick={handleReset} style={{
                 padding: '10px 20px', borderRadius: 10,
                 background: '#2563eb', color: '#fff', border: 'none',
                 cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600,
-              }}>Reset Filter</button>
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+              }}>
+                <i className="fa-solid fa-rotate-left"></i>
+                Lihat Semua Buku
+              </button>
             )}
           </div>
         ) : (
@@ -484,17 +566,21 @@ export default function PublicBooksPage() {
                         <div style={{
                           width: '100%', height: '100%',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 36,
-                        }}>📗</div>
+                          color: 'rgba(255,255,255,0.75)', fontSize: 32,
+                        }}>
+                          <i className={`fa-solid ${FA_ICONS[idx % FA_ICONS.length]}`}></i>
+                        </div>
                       )}
                       {/* Access badge */}
                       {book.access_type === 'restricted' && (
                         <div style={{ position: 'absolute', top: 6, right: 6 }}>
                           <span style={{
                             background: 'rgba(0,0,0,0.65)', color: '#fbbf24',
-                            fontSize: 10, padding: '2px 6px', borderRadius: 6,
-                            fontWeight: 600,
-                          }}>🔒</span>
+                            fontSize: 10, padding: '3px 7px', borderRadius: 6,
+                            fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4,
+                          }}>
+                            <i className="fa-solid fa-lock" style={{ fontSize: 9 }}></i>
+                          </span>
                         </div>
                       )}
                     </div>
@@ -537,7 +623,7 @@ export default function PublicBooksPage() {
             {totalPages > 1 && (
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                gap: 8, paddingBottom: 40,
+                gap: 8, paddingBottom: 40, flexWrap: 'wrap',
               }}>
                 <button
                   onClick={() => setPage(p => p - 1)}
@@ -548,10 +634,13 @@ export default function PublicBooksPage() {
                     background: 'var(--card-bg)', color: 'var(--text-secondary)',
                     cursor: page === 1 ? 'not-allowed' : 'pointer',
                     opacity: page === 1 ? 0.4 : 1, fontSize: '0.875rem',
+                    display: 'flex', alignItems: 'center', gap: 6,
                   }}
-                >← Prev</button>
+                >
+                  <i className="fa-solid fa-arrow-left" style={{ fontSize: '0.75rem' }}></i>
+                  Prev
+                </button>
 
-                {/* Page numbers */}
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   let p: number
                   if (totalPages <= 5) {
@@ -585,8 +674,12 @@ export default function PublicBooksPage() {
                     background: 'var(--card-bg)', color: 'var(--text-secondary)',
                     cursor: page === totalPages ? 'not-allowed' : 'pointer',
                     opacity: page === totalPages ? 0.4 : 1, fontSize: '0.875rem',
+                    display: 'flex', alignItems: 'center', gap: 6,
                   }}
-                >Next →</button>
+                >
+                  Next
+                  <i className="fa-solid fa-arrow-right" style={{ fontSize: '0.75rem' }}></i>
+                </button>
               </div>
             )}
           </>
@@ -599,7 +692,7 @@ export default function PublicBooksPage() {
           background: 'linear-gradient(135deg, #1e3a6e 0%, #2563eb 100%)',
           padding: '32px 16px', textAlign: 'center', marginTop: 8,
         }}>
-          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem', marginBottom: 8 }}>
+          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem', marginBottom: 12 }}>
             Daftar untuk membaca e-book dan menyimpan progres Anda
           </p>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -607,12 +700,20 @@ export default function PublicBooksPage() {
               background: '#fff', color: '#1d4ed8',
               padding: '10px 22px', borderRadius: 10,
               fontSize: '0.9375rem', fontWeight: 700, textDecoration: 'none',
-            }}>Daftar Gratis</Link>
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              <i className="fa-solid fa-user-plus"></i>
+              Daftar Gratis
+            </Link>
             <Link href="/auth/login" style={{
               background: 'rgba(255,255,255,0.15)', color: '#fff',
               padding: '10px 22px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.3)',
               fontSize: '0.9375rem', fontWeight: 600, textDecoration: 'none',
-            }}>Masuk</Link>
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              <i className="fa-solid fa-right-to-bracket"></i>
+              Masuk
+            </Link>
           </div>
         </div>
       )}
@@ -626,31 +727,25 @@ export default function PublicBooksPage() {
         fontSize: '0.75rem',
         marginTop: 8,
       }}>
-        © {new Date().getFullYear()} E-Library Perusahaan. Confidential.
+        <i className="fa-regular fa-copyright" style={{ marginRight: 4 }}></i>
+        {new Date().getFullYear()} E-Library Perusahaan. Confidential.
       </footer>
 
       <style>{`
-        @keyframes pulse {
+        @keyframes shimmer {
           0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
+          50% { opacity: 0.4; }
         }
-        /* Mobile: show filter button, hide desktop filters */
         @media (max-width: 640px) {
           .desktop-filters { display: none !important; }
           .mobile-filter-btn { display: flex !important; }
-          .mobile-filter-panel { display: flex !important; }
           .desktop-nav { display: none !important; }
-          .nav-logo-text { display: block !important; }
-          .mobile-only { display: flex !important; }
           .desktop-only { display: none !important; }
         }
         @media (min-width: 641px) {
           .desktop-filters { display: flex !important; }
           .mobile-filter-btn { display: none !important; }
-          .mobile-filter-panel { display: none !important; }
           .desktop-nav { display: flex !important; }
-          .nav-logo-text { display: block !important; }
-          .mobile-only { display: none !important; }
           .desktop-only { display: flex !important; }
         }
       `}</style>

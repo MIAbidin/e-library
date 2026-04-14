@@ -35,10 +35,33 @@ export default async function HomePage() {
     ? session.user.role === 'admin' ? '/admin' : '/dashboard'
     : null
 
-  const categoryIcons = ['💼', '📈', '💡', '🎯', '🚀', '🌿']
+  // Font Awesome category icons (fa classes)
+  const categoryFaIcons = [
+    'fa-briefcase',
+    'fa-chart-line',
+    'fa-lightbulb',
+    'fa-bullseye',
+    'fa-rocket',
+    'fa-leaf',
+  ]
+
+  const categoryColors = [
+    { bg: 'rgba(59,130,246,0.12)', color: '#60a5fa' },
+    { bg: 'rgba(16,185,129,0.12)', color: '#34d399' },
+    { bg: 'rgba(139,92,246,0.12)', color: '#a78bfa' },
+    { bg: 'rgba(245,158,11,0.12)', color: '#fbbf24' },
+    { bg: 'rgba(239,68,68,0.12)', color: '#f87171' },
+    { bg: 'rgba(20,184,166,0.12)', color: '#2dd4bf' },
+  ]
 
   return (
     <>
+      {/* Font Awesome CDN */}
+      <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      />
+
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
@@ -89,7 +112,7 @@ export default async function HomePage() {
           min-height: 100vh;
         }
 
-        /* ── UNIFIED NAVBAR ── */
+        /* ── NAVBAR ── */
         .hp-nav {
           position: sticky; top: 0; z-index: 100;
           background: var(--hp-nav-bg);
@@ -117,9 +140,9 @@ export default async function HomePage() {
           background: linear-gradient(135deg, #1e4bd8 0%, #7c3aed 100%);
           border-radius: 9px;
           display: flex; align-items: center; justify-content: center;
-          font-size: 17px;
           box-shadow: 0 2px 10px rgba(30,75,216,0.3);
           flex-shrink: 0;
+          color: white; font-size: 15px;
         }
 
         .hp-logo-text {
@@ -283,7 +306,10 @@ export default async function HomePage() {
           border-left: 1px solid rgba(255,255,255,0.08);
         }
         .hp-stat:last-child { padding-right: 0; }
-        .hp-stat-icon { font-size: 1.125rem; margin-bottom: 5px; display: block; }
+        .hp-stat-icon {
+          font-size: 1rem; margin-bottom: 6px; display: block;
+          color: #93b4f8;
+        }
         .hp-stat-num {
           font-family: 'Fraunces', serif;
           font-size: 2rem; font-weight: 700;
@@ -311,6 +337,7 @@ export default async function HomePage() {
           width: 100%; height: 100%;
           display: flex; align-items: center; justify-content: center;
           font-size: 2.5rem;
+          color: rgba(255,255,255,0.85);
         }
 
         .hp-float-badge {
@@ -331,7 +358,11 @@ export default async function HomePage() {
         @keyframes floatB { 0%,100% { transform: translateY(0); } 50% { transform: translateY(8px); } }
         @keyframes floatC { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
 
-        .hp-badge-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        .hp-badge-icon {
+          width: 30px; height: 30px; border-radius: 8px;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 13px;
+        }
         .hp-badge-label { color: var(--hp-text-3); font-size: 0.6875rem; font-weight: 400; }
 
         /* ── MARQUEE ── */
@@ -394,11 +425,12 @@ export default async function HomePage() {
           color: var(--hp-text-3); letter-spacing: 0.05em; margin-bottom: 1.125rem;
         }
         .hp-feature-icon {
-          width: 44px; height: 44px; border-radius: 11px; font-size: 1.25rem;
+          width: 44px; height: 44px; border-radius: 11px;
           display: flex; align-items: center; justify-content: center;
           margin-bottom: 1.125rem;
           background: var(--hp-surface2); border: 1px solid var(--hp-border);
           transition: transform 0.2s;
+          color: var(--hp-accent); font-size: 1.1rem;
         }
         .hp-feature:hover .hp-feature-icon { transform: scale(1.1) rotate(-3deg); }
         .hp-feature-title { font-size: 0.9375rem; font-weight: 700; color: var(--hp-text); margin-bottom: 0.5rem; }
@@ -436,7 +468,8 @@ export default async function HomePage() {
         .hp-book-card-cover { aspect-ratio: 3/4; position: relative; overflow: hidden; }
         .hp-book-card-placeholder {
           width: 100%; height: 100%;
-          display: flex; align-items: center; justify-content: center; font-size: 2.75rem;
+          display: flex; align-items: center; justify-content: center;
+          color: rgba(255,255,255,0.7); font-size: 2rem;
         }
         .hp-book-card-body { padding: 12px 12px 14px; }
         .hp-book-card-cat {
@@ -459,17 +492,26 @@ export default async function HomePage() {
           padding: 1.5rem; border-radius: 14px;
           border: 1px solid var(--hp-border);
           background: var(--hp-surface);
-          text-decoration: none; display: flex; align-items: center; gap: 12px;
-          transition: all 0.2s;
+          text-decoration: none; display: flex; align-items: center; gap: 14px;
+          transition: all 0.2s; cursor: pointer;
         }
-        .hp-cat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,0.1); }
+        .hp-cat-card:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+          border-color: var(--hp-accent);
+        }
         .hp-cat-icon {
-          width: 42px; height: 42px; border-radius: 11px;
+          width: 46px; height: 46px; border-radius: 12px;
           display: flex; align-items: center; justify-content: center;
-          font-size: 1.25rem; flex-shrink: 0;
+          font-size: 1.125rem; flex-shrink: 0;
+          transition: transform 0.2s;
         }
+        .hp-cat-card:hover .hp-cat-icon { transform: scale(1.1); }
         .hp-cat-name { font-size: 0.9375rem; font-weight: 700; color: var(--hp-text); }
-        .hp-cat-sub { font-size: 0.75rem; color: var(--hp-text-3); margin-top: 2px; }
+        .hp-cat-sub {
+          font-size: 0.75rem; color: var(--hp-text-3); margin-top: 2px;
+          display: flex; align-items: center; gap: 4px;
+        }
 
         /* ── HOW IT WORKS ── */
         .hp-steps-wrap { background: var(--hp-hero-bg); padding: 5rem 20px; }
@@ -484,7 +526,8 @@ export default async function HomePage() {
           background: rgba(255,255,255,0.05);
           border: 1px solid rgba(255,255,255,0.1);
           display: flex; align-items: center; justify-content: center;
-          margin: 0 auto 1.125rem; font-size: 1.25rem;
+          margin: 0 auto 1.125rem; font-size: 1.125rem;
+          color: #93b4f8;
         }
         .hp-step-title { font-size: 0.9375rem; font-weight: 700; color: #e8e4f0; margin-bottom: 0.5rem; }
         .hp-step-desc { font-size: 0.8125rem; color: rgba(232,228,240,0.4); line-height: 1.65; }
@@ -520,7 +563,8 @@ export default async function HomePage() {
         .hp-footer-mark {
           width: 28px; height: 28px; border-radius: 7px;
           background: linear-gradient(135deg, #1e4bd8, #7c3aed);
-          display: flex; align-items: center; justify-content: center; font-size: 13px;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 12px; color: white;
         }
         .hp-footer-text { font-family: 'Fraunces', serif; font-size: 0.9375rem; font-weight: 600; font-style: italic; color: rgba(255,255,255,0.4); }
         .hp-footer-copy { font-size: 0.75rem; color: rgba(255,255,255,0.2); }
@@ -565,11 +609,13 @@ export default async function HomePage() {
 
       <div className="hp-root">
 
-        {/* ── NAVBAR (Unified with /books) ── */}
+        {/* ── NAVBAR ── */}
         <nav className="hp-nav">
           <div className="hp-nav-inner">
             <a href="/home" className="hp-logo">
-              <div className="hp-logo-mark">📚</div>
+              <div className="hp-logo-mark">
+                <i className="fa-solid fa-book-open"></i>
+              </div>
               <span className="hp-logo-text">E-Library</span>
             </a>
 
@@ -585,7 +631,9 @@ export default async function HomePage() {
               {session ? (
                 <>
                   <a href={dashboardHref!} className="hp-btn-ghost">Dashboard</a>
-                  <a href={dashboardHref!} className="hp-btn-primary">Buka Aplikasi →</a>
+                  <a href={dashboardHref!} className="hp-btn-primary">
+                    Buka Aplikasi <i className="fa-solid fa-arrow-right"></i>
+                  </a>
                 </>
               ) : (
                 <>
@@ -618,29 +666,37 @@ export default async function HomePage() {
               <div className="hp-hero-actions">
                 {session ? (
                   <>
-                    <a href={dashboardHref!} className="hp-cta-big">🏠 Buka Dashboard</a>
-                    <a href="/books" className="hp-cta-outline">Jelajahi Koleksi →</a>
+                    <a href={dashboardHref!} className="hp-cta-big">
+                      <i className="fa-solid fa-house"></i> Buka Dashboard
+                    </a>
+                    <a href="/books" className="hp-cta-outline">
+                      Jelajahi Koleksi <i className="fa-solid fa-arrow-right"></i>
+                    </a>
                   </>
                 ) : (
                   <>
-                    <a href="/auth/register" className="hp-cta-big">✨ Mulai Gratis</a>
-                    <a href="/books" className="hp-cta-outline">Lihat Koleksi →</a>
+                    <a href="/auth/register" className="hp-cta-big">
+                      <i className="fa-solid fa-sparkles"></i> Mulai Gratis
+                    </a>
+                    <a href="/books" className="hp-cta-outline">
+                      Lihat Koleksi <i className="fa-solid fa-arrow-right"></i>
+                    </a>
                   </>
                 )}
               </div>
               <div className="hp-hero-stats">
                 <div className="hp-stat">
-                  <span className="hp-stat-icon">📚</span>
+                  <i className="fa-solid fa-books hp-stat-icon"></i>
                   <div className="hp-stat-num">{totalBooks ?? 0}+</div>
                   <div className="hp-stat-label">Koleksi E-Book</div>
                 </div>
                 <div className="hp-stat">
-                  <span className="hp-stat-icon">👥</span>
+                  <i className="fa-solid fa-users hp-stat-icon"></i>
                   <div className="hp-stat-num">{totalUsers ?? 0}</div>
                   <div className="hp-stat-label">Pembaca Aktif</div>
                 </div>
                 <div className="hp-stat">
-                  <span className="hp-stat-icon">🏷️</span>
+                  <i className="fa-solid fa-tags hp-stat-icon"></i>
                   <div className="hp-stat-num">{totalCategories ?? 0}</div>
                   <div className="hp-stat-label">Kategori Topik</div>
                 </div>
@@ -651,32 +707,40 @@ export default async function HomePage() {
             <div className="hp-hero-visual">
               <div className="hp-book-showcase">
                 {[
-                  { cls: 'hp-book-1', bg: 'linear-gradient(135deg, #1e3a6e, #2563eb)', icon: '📘' },
-                  { cls: 'hp-book-2', bg: 'linear-gradient(135deg, #134e3a, #16a34a)', icon: '📗' },
-                  { cls: 'hp-book-3', bg: 'linear-gradient(135deg, #4c1d95, #7c3aed)', icon: '📕' },
-                  { cls: 'hp-book-4', bg: 'linear-gradient(135deg, #7f1d1d, #dc2626)', icon: '📔' },
-                  { cls: 'hp-book-5', bg: 'linear-gradient(135deg, #1e3a5f, #0ea5e9)', icon: '📒' },
+                  { cls: 'hp-book-1', bg: 'linear-gradient(135deg, #1e3a6e, #2563eb)', icon: 'fa-book' },
+                  { cls: 'hp-book-2', bg: 'linear-gradient(135deg, #134e3a, #16a34a)', icon: 'fa-book-open' },
+                  { cls: 'hp-book-3', bg: 'linear-gradient(135deg, #4c1d95, #7c3aed)', icon: 'fa-bookmark' },
+                  { cls: 'hp-book-4', bg: 'linear-gradient(135deg, #7f1d1d, #dc2626)', icon: 'fa-graduation-cap' },
+                  { cls: 'hp-book-5', bg: 'linear-gradient(135deg, #1e3a5f, #0ea5e9)', icon: 'fa-file-lines' },
                 ].map((b, i) => (
                   <div key={i} className={`hp-book-float ${b.cls}`}>
-                    <div className="hp-book-cover" style={{ background: b.bg }}>{b.icon}</div>
+                    <div className="hp-book-cover" style={{ background: b.bg }}>
+                      <i className={`fa-solid ${b.icon}`} style={{ fontSize: '2.5rem' }}></i>
+                    </div>
                   </div>
                 ))}
                 <div className="hp-float-badge hp-badge-1">
-                  <div className="hp-badge-icon" style={{ background: 'rgba(34,197,94,0.15)', fontSize: 16 }}>✅</div>
+                  <div className="hp-badge-icon" style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}>
+                    <i className="fa-solid fa-circle-check"></i>
+                  </div>
                   <div>
                     <div>Buku Selesai</div>
                     <div className="hp-badge-label">+3 minggu ini</div>
                   </div>
                 </div>
                 <div className="hp-float-badge hp-badge-2">
-                  <div className="hp-badge-icon" style={{ background: 'rgba(251,191,36,0.15)', fontSize: 16 }}>🔥</div>
+                  <div className="hp-badge-icon" style={{ background: 'rgba(251,191,36,0.15)', color: '#f59e0b' }}>
+                    <i className="fa-solid fa-fire"></i>
+                  </div>
                   <div>
                     <div>7 Hari Streak</div>
                     <div className="hp-badge-label">Pertahankan!</div>
                   </div>
                 </div>
                 <div className="hp-float-badge hp-badge-3">
-                  <div className="hp-badge-icon" style={{ background: 'rgba(91,141,239,0.15)', fontSize: 16 }}>📊</div>
+                  <div className="hp-badge-icon" style={{ background: 'rgba(91,141,239,0.15)', color: '#5b8def' }}>
+                    <i className="fa-solid fa-chart-bar"></i>
+                  </div>
                   <div>
                     <div>142 Halaman</div>
                     <div className="hp-badge-label">dibaca hari ini</div>
@@ -691,13 +755,21 @@ export default async function HomePage() {
         <div className="hp-marquee-strip">
           <div className="hp-marquee-track">
             {Array(2).fill([
-              '📚 Koleksi Lengkap', '📈 Lacak Progres', '🔔 Notifikasi Real-time',
-              '🔒 Akses Terkontrol', '📱 Responsif Mobile', '🏆 Streak Harian',
-              '⚡ PDF Viewer Cepat', '📥 Export CSV', '👥 Manajemen Tim', '🌐 Akses 24/7',
+              { icon: 'fa-books', text: 'Koleksi Lengkap' },
+              { icon: 'fa-chart-line', text: 'Lacak Progres' },
+              { icon: 'fa-bell', text: 'Notifikasi Real-time' },
+              { icon: 'fa-lock', text: 'Akses Terkontrol' },
+              { icon: 'fa-mobile-screen', text: 'Responsif Mobile' },
+              { icon: 'fa-fire', text: 'Streak Harian' },
+              { icon: 'fa-bolt', text: 'PDF Viewer Cepat' },
+              { icon: 'fa-file-export', text: 'Export CSV' },
+              { icon: 'fa-users', text: 'Manajemen Tim' },
+              { icon: 'fa-globe', text: 'Akses 24/7' },
             ]).flat().map((item, i) => (
               <span key={i} className="hp-marquee-item">
                 {i > 0 && <span className="hp-marquee-dot" />}
-                {item}
+                <i className={`fa-solid ${item.icon}`} style={{ fontSize: '0.75rem' }}></i>
+                {item.text}
               </span>
             ))}
           </div>
@@ -715,16 +787,18 @@ export default async function HomePage() {
           </p>
           <div className="hp-features-grid">
             {[
-              { num: '01', icon: '📄', title: 'Baca Langsung di Browser', desc: 'PDF viewer built-in yang mulus dan responsif. Tidak perlu download, langsung baca.' },
-              { num: '02', icon: '🔖', title: 'Simpan Posisi Otomatis', desc: 'Tinggalkan di halaman berapa pun, sistem akan mengingat. Lanjutkan kapan saja.' },
-              { num: '03', icon: '📊', title: 'Dashboard Statistik Personal', desc: 'Lihat buku yang sudah dibaca, halaman, streak harian, dan grafik aktivitas mingguan.' },
-              { num: '04', icon: '🔔', title: 'Notifikasi Real-time', desc: 'Dapat notifikasi saat ada buku baru atau pengumuman penting dari admin.' },
-              { num: '05', icon: '🔒', title: 'Kontrol Akses Granular', desc: 'Admin bisa mengatur buku mana yang publik dan restricted per departemen.' },
-              { num: '06', icon: '📥', title: 'Laporan & Analitik', desc: 'Dashboard aktivitas seluruh karyawan, buku terpopuler, dan export CSV kapan saja.' },
+              { num: '01', icon: 'fa-file-pdf', title: 'Baca Langsung di Browser', desc: 'PDF viewer built-in yang mulus dan responsif. Tidak perlu download, langsung baca.' },
+              { num: '02', icon: 'fa-bookmark', title: 'Simpan Posisi Otomatis', desc: 'Tinggalkan di halaman berapa pun, sistem akan mengingat. Lanjutkan kapan saja.' },
+              { num: '03', icon: 'fa-chart-bar', title: 'Dashboard Statistik Personal', desc: 'Lihat buku yang sudah dibaca, halaman, streak harian, dan grafik aktivitas mingguan.' },
+              { num: '04', icon: 'fa-bell', title: 'Notifikasi Real-time', desc: 'Dapat notifikasi saat ada buku baru atau pengumuman penting dari admin.' },
+              { num: '05', icon: 'fa-shield-halved', title: 'Kontrol Akses Granular', desc: 'Admin bisa mengatur buku mana yang publik dan restricted per departemen.' },
+              { num: '06', icon: 'fa-file-export', title: 'Laporan & Analitik', desc: 'Dashboard aktivitas seluruh karyawan, buku terpopuler, dan export CSV kapan saja.' },
             ].map((f) => (
               <div key={f.num} className="hp-feature">
                 <div className="hp-feature-num">— {f.num}</div>
-                <div className="hp-feature-icon">{f.icon}</div>
+                <div className="hp-feature-icon">
+                  <i className={`fa-solid ${f.icon}`}></i>
+                </div>
                 <div className="hp-feature-title">{f.title}</div>
                 <div className="hp-feature-desc">{f.desc}</div>
               </div>
@@ -744,7 +818,9 @@ export default async function HomePage() {
                     <em>ke perpustakaan</em>
                   </h2>
                 </div>
-                <a href="/books" className="hp-see-all">Lihat semua koleksi →</a>
+                <a href="/books" className="hp-see-all">
+                  Lihat semua koleksi <i className="fa-solid fa-arrow-right"></i>
+                </a>
               </div>
 
               <div className="hp-books-grid">
@@ -759,7 +835,7 @@ export default async function HomePage() {
                     'linear-gradient(135deg,#0c1a2e,#1d4ed8)',
                     'linear-gradient(135deg,#1a0533,#9333ea)',
                   ]
-                  const icons = ['📘','📗','📕','📔','📒','📓','📖','📚']
+                  const faIcons = ['fa-book','fa-book-open','fa-bookmark','fa-graduation-cap','fa-file-lines','fa-scroll','fa-newspaper','fa-feather-pointed']
                   return (
                     <a key={book.id} href={`/books/${book.id}`} className="hp-book-card">
                       <div className="hp-book-card-cover">
@@ -771,7 +847,7 @@ export default async function HomePage() {
                           />
                         ) : (
                           <div className="hp-book-card-placeholder" style={{ background: gradients[idx % gradients.length] }}>
-                            {icons[idx % icons.length]}
+                            <i className={`fa-solid ${faIcons[idx % faIcons.length]}`}></i>
                           </div>
                         )}
                       </div>
@@ -798,25 +874,29 @@ export default async function HomePage() {
               Temukan buku yang<br />
               <em>relevan dengan karier kamu</em>
             </h2>
+            <p className="hp-section-desc">
+              Klik kategori untuk langsung melihat koleksi buku yang tersedia.
+            </p>
             <div className="hp-categories-grid">
               {(categories ?? []).slice(0, 6).map((cat, i) => {
-                const catStyles = [
-                  { bg: 'rgba(59,130,246,0.12)', color: '#60a5fa' },
-                  { bg: 'rgba(16,185,129,0.12)', color: '#34d399' },
-                  { bg: 'rgba(139,92,246,0.12)', color: '#a78bfa' },
-                  { bg: 'rgba(245,158,11,0.12)', color: '#fbbf24' },
-                  { bg: 'rgba(239,68,68,0.12)', color: '#f87171' },
-                  { bg: 'rgba(20,184,166,0.12)', color: '#2dd4bf' },
-                ]
-                const c = catStyles[i % catStyles.length]
+                const c = categoryColors[i % categoryColors.length]
+                const faIcon = categoryFaIcons[i % categoryFaIcons.length]
                 return (
-                  <a key={cat.id} href={`/books?category=${cat.id}`} className="hp-cat-card">
-                    <div className="hp-cat-icon" style={{ background: c.bg }}>
-                      <span style={{ fontSize: '1.25rem' }}>{categoryIcons[i]}</span>
+                  // ✅ FIXED: Link langsung ke /books?category={cat.id}
+                  <a
+                    key={cat.id}
+                    href={`/books?category=${cat.id}`}
+                    className="hp-cat-card"
+                  >
+                    <div className="hp-cat-icon" style={{ background: c.bg, color: c.color }}>
+                      <i className={`fa-solid ${faIcon}`}></i>
                     </div>
                     <div>
                       <div className="hp-cat-name">{cat.name}</div>
-                      <div className="hp-cat-sub">Jelajahi koleksi →</div>
+                      <div className="hp-cat-sub" style={{ color: c.color }}>
+                        Jelajahi koleksi
+                        <i className="fa-solid fa-arrow-right" style={{ fontSize: '0.6875rem' }}></i>
+                      </div>
                     </div>
                   </a>
                 )
@@ -841,13 +921,15 @@ export default async function HomePage() {
             </div>
             <div className="hp-steps-grid">
               {[
-                { icon: '👤', title: 'Buat Akun', desc: 'Daftar dengan email perusahaan. Verifikasi email, lalu akun langsung aktif.' },
-                { icon: '🔍', title: 'Jelajahi Katalog', desc: 'Cari buku berdasarkan judul, penulis, atau kategori sesuai kebutuhan.' },
-                { icon: '📖', title: 'Mulai Membaca', desc: 'Buka buku langsung di browser. Progress tersimpan otomatis.' },
-                { icon: '📈', title: 'Lacak Kemajuan', desc: 'Pantau statistik membaca, streak harian, dan buku yang selesai.' },
+                { icon: 'fa-user-plus', title: 'Buat Akun', desc: 'Daftar dengan email perusahaan. Verifikasi email, lalu akun langsung aktif.' },
+                { icon: 'fa-magnifying-glass', title: 'Jelajahi Katalog', desc: 'Cari buku berdasarkan judul, penulis, atau kategori sesuai kebutuhan.' },
+                { icon: 'fa-book-open-reader', title: 'Mulai Membaca', desc: 'Buka buku langsung di browser. Progress tersimpan otomatis.' },
+                { icon: 'fa-chart-line', title: 'Lacak Kemajuan', desc: 'Pantau statistik membaca, streak harian, dan buku yang selesai.' },
               ].map((s) => (
                 <div key={s.title} className="hp-step">
-                  <div className="hp-step-num">{s.icon}</div>
+                  <div className="hp-step-num">
+                    <i className={`fa-solid ${s.icon}`}></i>
+                  </div>
                   <div className="hp-step-title">{s.title}</div>
                   <div className="hp-step-desc">{s.desc}</div>
                 </div>
@@ -871,13 +953,21 @@ export default async function HomePage() {
             <div className="hp-cta-actions">
               {session ? (
                 <>
-                  <a href={dashboardHref!} className="hp-cta-big">🏠 Buka Dashboard</a>
-                  <a href="/books" className="hp-cta-outline">📚 Jelajahi Katalog</a>
+                  <a href={dashboardHref!} className="hp-cta-big">
+                    <i className="fa-solid fa-house"></i> Buka Dashboard
+                  </a>
+                  <a href="/books" className="hp-cta-outline">
+                    <i className="fa-solid fa-books"></i> Jelajahi Katalog
+                  </a>
                 </>
               ) : (
                 <>
-                  <a href="/auth/register" className="hp-cta-big">✨ Daftar Gratis Sekarang</a>
-                  <a href="/books" className="hp-cta-outline">👁 Lihat Koleksi Dulu</a>
+                  <a href="/auth/register" className="hp-cta-big">
+                    <i className="fa-solid fa-rocket"></i> Daftar Gratis Sekarang
+                  </a>
+                  <a href="/books" className="hp-cta-outline">
+                    <i className="fa-solid fa-eye"></i> Lihat Koleksi Dulu
+                  </a>
                 </>
               )}
             </div>
@@ -887,7 +977,9 @@ export default async function HomePage() {
         {/* ── FOOTER ── */}
         <footer className="hp-footer">
           <a href="/home" className="hp-footer-logo">
-            <div className="hp-footer-mark">📚</div>
+            <div className="hp-footer-mark">
+              <i className="fa-solid fa-book-open"></i>
+            </div>
             <span className="hp-footer-text">E-Library Perusahaan</span>
           </a>
           <div className="hp-footer-links">
